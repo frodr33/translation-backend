@@ -6,6 +6,7 @@ print("setting up server")
 server.bind(('localhost', 50000))
 server.listen(5)
 print("server listening on localhost:5000")
+print(server)
 
 inputs = [server]  # All socket connections
 clients = []  # Clients
