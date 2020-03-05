@@ -1,8 +1,12 @@
 import select, socket, sys, queue, time
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
+
+print("setting up server")
 server.bind(('localhost', 50000))
 server.listen(5)
+print("server listening on localhost:5000")
+
 inputs = [server]  # All socket connections
 clients = []  # Clients
 outputs = []
