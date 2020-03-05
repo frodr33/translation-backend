@@ -1,9 +1,12 @@
-import select, socket, sys, queue, time
+import select, socket, sys, queue, time, os
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
 
+port=int(os.environ.get("PORT", 5000))
+print("on port: ", port)
+
 print("setting up server")
-server.bind(('localhost', 50000))
+server.bind(('0.0.0.0', port))
 server.listen(5)
 print("server listening on localhost:5000")
 print(server)
