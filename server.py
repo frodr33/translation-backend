@@ -11,6 +11,7 @@ message_queues = {}
 server_full = False
 
 while inputs:
+    print("waiting for inputs")
     readable, writable, exceptional = select.select(
         inputs, outputs, inputs)
     for s in readable:
