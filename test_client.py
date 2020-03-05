@@ -4,7 +4,7 @@ import threading
 host = "wss://translation-backend.herokuapp.com"
 # host = "localhost"
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((host, 50000))
+s.connect((host, 15014))
 
 print("Send messages to other client")
 
