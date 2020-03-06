@@ -3,7 +3,7 @@ import threading
 import socketio
 
 sio = socketio.Client()
-sio.connect('http://localhost:5000')
+sio.connect('http://translation-backend.herokuapp.com')
 print('my session identifier (sid) is', sio.sid)
 
 sio.emit('join', {"username": "Frank", "sid": sio.sid})

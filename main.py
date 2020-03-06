@@ -45,6 +45,7 @@ def on_join(data):
         send("Channel full, unable to join")
 
     num_clients += 1
+    print("Num Clients: ", num_clients)
 
 
 if __name__ == '__main__':
