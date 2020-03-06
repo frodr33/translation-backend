@@ -1,25 +1,19 @@
 import socket
 import threading
+import socketio
 
-host = "wss://translation-backend.herokuapp.com"
-# host = "localhost"
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s.connect((host, 15014))
+sio = socketio.Client()
+sio.connect('http://localhost:5000')
+print('my session identifier (sid) is', sio.sid)
 
-s.connect(('172.17.116.94', 8798))
-
-print("Send messages to other client")
+sio.emit('join', {"username": "Frank", "sid": sio.sid})
 
 
-def receive_and_print():
-    for message in iter(lambda: s.recv(1024).decode(), ''):
-        print(message)
+@sio.event
+def message(data):
+    print(data)
 
-
-receiving_thread = threading.Thread(target=receive_and_print)
-receiving_thread.start()
 
 while True:
     inp = input(">")
-    byt_msg = inp.encode()
-    s.sendall(byt_msg)
+    sio.emit("message", inp)
