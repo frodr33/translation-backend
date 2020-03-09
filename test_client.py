@@ -1,19 +1,32 @@
 import socket
 import threading
 import socketio
+import websockets
+import asyncio
 
-sio = socketio.Client()
-sio.connect('http://translation-backend.herokuapp.com')
-print('my session identifier (sid) is', sio.sid)
+# sio = socketio.Client()
+# sio.connect('ws://translation-backend.herokuapp.com/receive ')
+# print('my session identifier (sid) is', sio.sid)
+#
+# sio.emit('join', {"username": "Frank", "sid": sio.sid})
+#
+#
+# @sio.event
+# def message(data):
+#     print(data)
+#
+#
+# while True:
+#     inp = input(">")
+#     sio.emit("message", inp)
 
-sio.emit('join', {"username": "Frank", "sid": sio.sid})
 
+async def hello():
+    uri = "ws://translation-backend.herokuapp.com/receive"
+    async with websockets.connect(uri) as websocket:
+        name = input("What's your name? ")
 
-@sio.event
-def message(data):
-    print(data)
+        await websocket.send(name)
+        print(f"> {name}")
 
-
-while True:
-    inp = input(">")
-    sio.emit("message", inp)
+asyncio.get_event_loop().run_until_complete(hello())
