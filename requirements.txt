@@ -4,3 +4,4 @@ gunicorn
 flask-socketio
 eventlet
 Flask-Sockets
+redis
