@@ -99,6 +99,8 @@ def inbox(ws):
     """Receives incoming chat messages, inserts them into Redis."""
     while not ws.closed:
         # Sleep to prevent *contstant* context-switches.
+        print("INSIDE OF SUBMIT: ", ws)
+
         gevent.sleep(0.1)
         message = ws.receive()
 
