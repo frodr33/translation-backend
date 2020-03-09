@@ -5,6 +5,7 @@ from flask_socketio import SocketIO, emit, send, join_room
 from datetime import datetime
 import threading
 import redis
+import gevent
 
 REDIS_URL = os.getenv('REDISTOGO_URL', None)
 REDIS_CHANNEL = "translation-room"
