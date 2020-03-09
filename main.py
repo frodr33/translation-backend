@@ -1,14 +1,61 @@
 from flask import Flask
+from flask_sockets import Sockets
 from flask_socketio import SocketIO, emit, send, join_room
 from datetime import datetime
 import threading
+import redis
 
-CHANNEL = "translation-room"
+REDIS_URL = os.getenv('REDISTOGO_URL', None)
+REDIS_CHANNEL = "translation-room"
+
+if not REDIS_URL:
+    print("NO REDIS SERVER FOUND")
+
 num_clients = 0
 clients = {}
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+sockets = Sockets(app)
+redis = redis.from_url(REDIS_URL)
+
+
+class ChatBackend:
+    def __init__(self):
+        self.clients = []
+        self.pubsub = redis.pubsub()
+        self.pubsub.subscribe(REDIS_CHANNEL)
+
+    def __iter_data(self):
+        for message in self.pubsub.listen():
+            data = message.get('data')
+            if message['type'] == 'message':
+                app.logger.info(u'Sending message: {}'.format(data))
+                yield data
+
+    def register(self, client):
+        """Register a WebSocket connection for Redis updates."""
+        self.clients.append(client)
+
+    def send(self, client, data):
+        """Send given data to the registered client.
+        Automatically discards invalid connections."""
+        try:
+            client.send(data)
+        except Exception:
+            self.clients.remove(client)
+
+    def run(self):
+        """Listens for new messages in Redis, and sends them to clients."""
+        for data in self.__iter_data():
+            for client in self.clients:
+                gevent.spawn(self.send, client, data)
+
+    def start(self):
+        """Maintains Redis subscription in the background."""
+        gevent.spawn(self.run)
+
+chats = ChatBackend()
+chats.start()
 
 
 @app.route('/')
@@ -21,32 +68,48 @@ def homepage():
     """.format(time=the_time)
 
 
-@socketio.on('message')
-def handle_message(message):
-    if num_clients != 2:
-        send("Channel is not full")
-    else:
-        print('received message: ' + message)
-        send("response?")
-        send()
+# @socketio.on('message')
+# def handle_message(message):
+#     if num_clients != 2:
+#         send("Channel is not full")
+#     else:
+#         print('received message: ' + message)
+#         send("response?")
+#         send()
+#
+#
+# @socketio.on('join')
+# def on_join(data):
+#     global num_clients
+#     print("in join")
+#     username = data['username']
+#     sid = data['sid']
+#
+#     join_room(CHANNEL)
+#     send(username + " has joined chat room")
+#
+#     num_clients += 1
+#     print("Num Clients: ", num_clients)
 
 
-@socketio.on('join')
-def on_join(data):
-    global num_clients
-    print("in join")
-    username = data['username']
-    sid = data['sid']
+@sockets.route('/submit')
+def inbox(ws):
+    """Receives incoming chat messages, inserts them into Redis."""
+    while not ws.closed:
+        # Sleep to prevent *contstant* context-switches.
+        gevent.sleep(0.1)
+        message = ws.receive()
 
-    if num_clients < 2:
-        join_room(CHANNEL)
-        send(username + " has joined chat room")
-    else:
-        send("Channel full, unable to join")
-
-    num_clients += 1
-    print("Num Clients: ", num_clients)
+        if message:
+            app.logger.info(u'Inserting message: {}'.format(message))
+            redis.publish(REDIS_CHAN, message)
 
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+@sockets.route('/receive')
+def outbox(ws):
+    """Sends outgoing chat messages, via `ChatBackend`."""
+    chats.register(ws)
+
+    while not ws.closed:
+        # Context switch while `ChatBackend.start` is running in the background.
+        gevent.sleep(0.1)
