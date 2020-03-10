@@ -29,6 +29,7 @@ class ChatBackend:
 
     def __iter_data(self):
         for message in self.pubsub.listen():
+            print("ITERATING THROUGH REDIS PUBSUB: ", message)
             data = message.get('data')
             if message['type'] == 'message':
                 app.logger.info(u'Sending message: {}'.format(data))
