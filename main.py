@@ -26,6 +26,9 @@ class TranslationAPI:
         self.translator = Translator()
 
     def translate(self, message, src="Eng", dest="Span"):
+        if not isinstance(message, str):
+            message = message.decode("utf-8")
+
         translation = self.translator.translate(message)
         translated_text = translation.text
 
@@ -55,10 +58,7 @@ class ChatBackend:
     def send(self, client, data):
         """Send given data to the registered client.
         Automatically discards invalid connections."""
-        print("SENDING")
-        print(data)
-        print(type(data))
-        
+
         try:
             #  Initiate text-text translations
             translated_data = self.translation_api.translate(data)
