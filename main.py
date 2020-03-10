@@ -60,7 +60,8 @@ class ChatBackend:
             #  Initiate text-text translations
             translated_data = self.translation_api.translate(data)
             client.send(translated_data)
-        except Exception:
+        except Exception as err:
+            print(err)
             self.clients.remove(client)
 
     def run(self):
