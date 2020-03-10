@@ -98,14 +98,15 @@ def homepage():
 def inbox(ws):
     """Receives incoming chat messages, inserts them into Redis."""
     print("INSIDE OF SUBMIT: ", ws)
+
     while not ws.closed:
-        # Sleep to prevent *contstant* context-switches.
         gevent.sleep(0.1)
         message = ws.receive()
 
         if message:
             app.logger.info(u'Inserting message: {}'.format(message))
-            redis.publish(REDIS_CHAN, message)
+            print("PUBLISHING MSG TO REDIS")
+            redis.publish(REDIS_CHANNEL, message)
 
 
 @sockets.route('/receive')
