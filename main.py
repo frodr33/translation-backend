@@ -112,6 +112,7 @@ def inbox(ws):
 @sockets.route('/receive')
 def outbox(ws):
     """Sends outgoing chat messages, via `ChatBackend`."""
+    print("IN OUTBOX")
     chats.register(ws)
 
     while not ws.closed:
