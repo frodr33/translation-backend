@@ -6,6 +6,7 @@ from datetime import datetime
 import threading
 import redis
 import gevent
+from googletrans import Translator
 
 REDIS_URL = os.getenv('REDISTOGO_URL', None)
 REDIS_CHANNEL = "translation-room"
@@ -20,11 +21,24 @@ sockets = Sockets(app)
 redis = redis.from_url(REDIS_URL)
 
 
+class TranslationAPI:
+    def __init__(self):
+        self.translator = Translator()
+
+    def translate(self, message, src="Eng", dest="Span"):
+        translation = self.translator.translate(message)
+        translated_text = translation.text
+
+        print("Translated: ", message, " to: ", translated_text)
+        return translated_text
+
+
 class ChatBackend:
     def __init__(self):
         self.clients = []
         self.pubsub = redis.pubsub()
         self.pubsub.subscribe(REDIS_CHANNEL)
+        self.translation_api = TranslationAPI()
 
     def __iter_data(self):
         for message in self.pubsub.listen():
@@ -42,7 +56,9 @@ class ChatBackend:
         """Send given data to the registered client.
         Automatically discards invalid connections."""
         try:
-            client.send(data)
+            #  Initiate text-text translations
+            translated_data = self.translation_api.translate(data)
+            client.send(translated_data)
         except Exception:
             self.clients.remove(client)
 

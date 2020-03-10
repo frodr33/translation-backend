@@ -6,3 +6,4 @@ eventlet
 Flask-Sockets
 redis
 gevent
+googletrans
