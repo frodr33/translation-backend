@@ -59,6 +59,7 @@ class ChatBackend:
         """Maintains Redis subscription in the background."""
         gevent.spawn(self.run)
 
+
 chats = ChatBackend()
 chats.start()
 
@@ -68,33 +69,12 @@ def homepage():
     the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
 
     return """
-    <h1>Hello heroku</h1>
-    <p>It is currently {time}.</p>
+    <h1>Translation Backend Server.</h1>
+    <p>This root page is only for health checking of the server. To send messages to the web socket server,</p>
+    <p>create a web socket connection and send to the ws://translation-backend.herokuapp.com/submit endpoint. </p>
+    <p>To receive from the web socket, create a web socket connection at ws://translation-backend.herokuapp.com/receive</p>
+    <p>and receive from this endpoint. </p>
     """.format(time=the_time)
-
-
-# @socketio.on('message')
-# def handle_message(message):
-#     if num_clients != 2:
-#         send("Channel is not full")
-#     else:
-#         print('received message: ' + message)
-#         send("response?")
-#         send()
-#
-#
-# @socketio.on('join')
-# def on_join(data):
-#     global num_clients
-#     print("in join")
-#     username = data['username']
-#     sid = data['sid']
-#
-#     join_room(CHANNEL)
-#     send(username + " has joined chat room")
-#
-#     num_clients += 1
-#     print("Num Clients: ", num_clients)
 
 
 @sockets.route('/submit')
