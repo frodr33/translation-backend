@@ -15,7 +15,6 @@ if not REDIS_URL:
 
 num_clients = 0
 clients = {}
-
 app = Flask(__name__)
 sockets = Sockets(app)
 redis = redis.from_url(REDIS_URL)
