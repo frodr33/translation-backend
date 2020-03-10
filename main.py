@@ -55,6 +55,7 @@ class ChatBackend:
     def send(self, client, data):
         """Send given data to the registered client.
         Automatically discards invalid connections."""
+        print("SENDING")
         try:
             #  Initiate text-text translations
             translated_data = self.translation_api.translate(data)
