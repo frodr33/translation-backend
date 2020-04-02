@@ -29,7 +29,7 @@ class TranslationAPI:
 
         # Remove prepended metadata
         message_index = message.index(":") + 1
-        message_content = message[message_index]
+        message_content = message[message_index:]
 
         translation = self.translator.translate(message_content)
         translated_text = translation.text
