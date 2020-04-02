@@ -29,14 +29,14 @@ class TranslationAPI:
 
         # Remove prepended metadata
         lang_index = message.index(":") + 1
-        message_index = message.index(":", start=lang_index)
+        message_index = message.index(":", lang_index)
 
         language = message[lang_index:message_index]
         message_content = message[message_index:]
 
         print("Translating for langauge: ", language)
 
-        translation = self.translator.translate(message_content)
+        translation = self.translator.translate(message_content, dest=language)
         translated_text = translation.text
 
         # Add metadata back in
