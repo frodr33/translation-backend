@@ -6,7 +6,8 @@ import asyncio
 
 
 async def receive():
-    uri = "ws://translation-backend.herokuapp.com/receive"
+    # uri = "ws://translation-backend.herokuapp.com/receive"
+    uri = "ws://localhost:7000/receive"
     async with websockets.connect(uri) as websocket:
         while True:
             msg = await websocket.recv()

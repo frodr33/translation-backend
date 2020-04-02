@@ -22,7 +22,8 @@ import asyncio
 
 
 async def hello():
-    uri = "ws://translation-backend.herokuapp.com/submit"
+    # uri = "ws://translation-backend.herokuapp.com/submit"
+    uri = "ws://localhost:7000/submit"
     async with websockets.connect(uri) as websocket:
         while True:
             name = input(">")

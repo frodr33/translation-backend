@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sockets import Sockets
 from flask_socketio import SocketIO, emit, send, join_room
 from datetime import datetime
@@ -8,14 +8,12 @@ import redis
 import gevent
 from googletrans import Translator
 
-REDIS_URL = os.getenv('REDISTOGO_URL', None)
+REDIS_URL = os.getenv('REDISTOGO_URL', "redis://localhost:6379")
 REDIS_CHANNEL = "translation-room"
 
-if not REDIS_URL:
-    print("NO REDIS SERVER FOUND")
+MAX_CLIENTS = 2  # 0 and 1
+CLIENTS = 0
 
-num_clients = 0
-clients = {}
 app = Flask(__name__)
 sockets = Sockets(app)
 redis = redis.from_url(REDIS_URL)
@@ -29,10 +27,17 @@ class TranslationAPI:
         if not isinstance(message, str):
             message = message.decode("utf-8")
 
-        translation = self.translator.translate(message)
+        # Remove prepended metadata
+        message_index = message.index(":") + 1
+        message_content = message[message_index]
+
+        translation = self.translator.translate(message_content)
         translated_text = translation.text
 
-        print("Translated: ", message, " to: ", translated_text)
+        # Add metadata back in
+        final_message = message[:message_index] + translated_text
+
+        print("Translated: ", message, " to: ", final_message)
         return translated_text
 
 
@@ -101,6 +106,7 @@ def homepage():
 def inbox(ws):
     """Receives incoming chat messages, inserts them into Redis."""
     print("INSIDE OF SUBMIT: ", ws)
+    # print()
 
     while not ws.closed:
         gevent.sleep(0.1)
