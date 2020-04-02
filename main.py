@@ -28,8 +28,13 @@ class TranslationAPI:
             message = message.decode("utf-8")
 
         # Remove prepended metadata
-        message_index = message.index(":") + 1
+        lang_index = message.index(":") + 1
+        message_index = message.index(":", start=lang_index)
+
+        language = message[lang_index:message_index]
         message_content = message[message_index:]
+
+        print("Translating for langauge: ", language)
 
         translation = self.translator.translate(message_content)
         translated_text = translation.text
