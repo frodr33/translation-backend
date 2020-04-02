@@ -38,7 +38,7 @@ class TranslationAPI:
         final_message = message[:message_index] + translated_text
 
         print("Translated: ", message, " to: ", final_message)
-        return translated_text
+        return final_message
 
 
 class ChatBackend:
