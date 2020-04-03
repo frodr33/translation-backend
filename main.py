@@ -58,6 +58,7 @@ class TranslationAPI:
         print("adding preprend")
         final_message = message[:message_index] + translated_text
 
+
         print("Translated: ", message, " to: ", final_message)
         return final_message
 
