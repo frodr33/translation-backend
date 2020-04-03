@@ -161,6 +161,16 @@ def disconnect():
     return "HELLO".format(time=the_time)
 
 
+@app.route('/reset')
+def disconnect():
+    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
+
+    redis.set("clients", 0)
+    print("PRINTING CLIENTS", redis.get("clients"))
+
+    return "HELLO".format(time=the_time)
+
+
 @sockets.route('/receive')
 def outbox(ws):
     """Sends outgoing chat messages, via `ChatBackend`."""
