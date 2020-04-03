@@ -159,7 +159,8 @@ def connect():
     redis.sadd("languages", lang)
     print("Current languages", redis.smembers("languages"))
 
-    return jsonify("HELLO")
+    langs = redis.smembers("languages")
+    return jsonify(langs)
 
 
 @app.route('/disconnect')
