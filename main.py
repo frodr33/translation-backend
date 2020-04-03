@@ -133,22 +133,37 @@ def inbox(ws):
             redis.publish(REDIS_CHANNEL, message)
 
 
+@app.route('/connect')
+def homepage():
+    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
+
+    print("CONNECTING")
+    num_connected = redis.get("clients")
+    num_connected = int(num_connected.decode("utf-8"))
+
+    redis.set("clients", num_connected + 1)
+    return "HELLO".format(time=the_time)
+
+
+@app.route('/disconnect')
+def homepage():
+    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
+
+    print("DISCONNECTING")
+    num_connected = redis.get("clients")
+    num_connected = int(num_connected.decode("utf-8"))
+    redis.set("clients", num_connected - 1)
+
+    return "HELLO".format(time=the_time)
+
+
 @sockets.route('/receive')
 def outbox(ws):
     """Sends outgoing chat messages, via `ChatBackend`."""
     print("IN OUTBOX")
     chats.register(ws)
 
-    num_connected = redis.get("clients")
-    num_connected = int(num_connected.decode("utf-8"))
-
-    redis.set("clients", num_connected + 1)
     print("PRINTING CLIENTS", redis.get("clients"))
     while not ws.closed:
         # Context switch while `ChatBackend.start` is running in the background.
         gevent.sleep(0.1)
-
-    print("SOCKET CLOSING")
-    num_connected = redis.get("clients")
-    num_connected = int(num_connected.decode("utf-8"))
-    redis.set("clients", num_connected - 1)
