@@ -163,9 +163,12 @@ def connect():
     redis.sadd("languages", language)
     print("Current languages", redis.smembers("languages"))
 
+    langs = redis.smembers("languages")
+
     while num_connected != 2:
         num_connected = redis.get("clients")
         num_connected = int(num_connected.decode("utf-8"))
+        langs = redis.smembers("languages")
 
         time.sleep(.5)
         print("waiting for other client in /connect. Currently have: ", num_connected)
