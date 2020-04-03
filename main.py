@@ -142,7 +142,7 @@ def connect():
     num_connected = int(num_connected.decode("utf-8"))
 
     redis.set("clients", num_connected + 1)
-    return {"HELLO", "WORLD"}, 200
+    return jsonify("HELLO")
 
 
 @app.route('/disconnect')
