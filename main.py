@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_sockets import Sockets
 from flask_socketio import SocketIO, emit, send, join_room
 from datetime import datetime
+import time
 import threading
 import redis
 import gevent
@@ -92,6 +93,15 @@ class ChatBackend:
         """Listens for new messages in Redis, and sends them to clients."""
         for data in self.__iter_data():
             print("RUNNING for data: ", data)
+
+            num_connected = redis.get("clients")
+            num_connected = int(num_connected.decode("utf-8"))
+
+            while num_connected != 2:
+                num_connected = redis.get("clients")
+                num_connected = int(num_connected.decode("utf-8"))
+                print("NUM CONNECTED IS: ", num_connected)
+                time.sleep(.5)
 
             for client in self.clients:
                 print("Client: ", client)
