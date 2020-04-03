@@ -27,6 +27,10 @@ class TranslationAPI:
         if not isinstance(message, str):
             message = message.decode("utf-8")
 
+        # Check if ignore flag
+        if "IGNORE" in message:
+            return message
+
         # Remove prepended metadata
         lang_index = message.index(":") + 1
         message_index = message.index(":", lang_index)
