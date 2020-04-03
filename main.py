@@ -147,7 +147,7 @@ def inbox(ws):
 
 @app.route('/connect')
 def connect():
-    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
+    lang = request.args.get('lang')
 
     print("CONNECTING")
     num_connected = redis.get("clients")
@@ -155,12 +155,16 @@ def connect():
 
     redis.set("clients", num_connected + 1)
     print("PRINTING CLIENTS", redis.get("clients"))
+
+    redis.sadd("languages", lang)
+    print("Current languages", redis.smembers("languages"))
+
     return jsonify("HELLO")
 
 
 @app.route('/disconnect')
 def disconnect():
-    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
+    lang = request.args.get('lang')
 
     print("DISCONNECTING")
     num_connected = redis.get("clients")
@@ -168,7 +172,9 @@ def disconnect():
     redis.set("clients", num_connected - 1)
     print("PRINTING CLIENTS", redis.get("clients"))
 
-    return "HELLO".format(time=the_time)
+    redis.srem("languages", lang)
+    print("Current languages", redis.smembers("languages"))
+    return jsonify("HELLO")
 
 
 @app.route('/reset')
@@ -177,6 +183,9 @@ def reset():
 
     redis.set("clients", 0)
     print("PRINTING CLIENTS", redis.get("clients"))
+
+    redis.delete("languages")
+    print("PRINTING CLIENTS", redis.smembers("languages"))
 
     return "HELLO".format(time=the_time)
 
