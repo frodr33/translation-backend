@@ -47,11 +47,15 @@ class TranslationAPI:
         message_content = message[message_index:]
 
         print("Translating for langauge: ", language)
+        print(message_content)
 
         translation = self.translator.translate(message_content, dest=language)
+
+        print("translated")
         translated_text = translation.text
 
         # Add metadata back in
+        print("adding preprend")
         final_message = message[:message_index] + translated_text
 
         print("Translated: ", message, " to: ", final_message)
