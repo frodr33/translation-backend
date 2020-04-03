@@ -18,6 +18,11 @@ app = Flask(__name__)
 sockets = Sockets(app)
 redis = redis.from_url(REDIS_URL)
 
+# Redis var setup
+num_clients = redis.get("clients")
+if not num_clients:
+    redis.set("clients", 1)
+
 
 class TranslationAPI:
     def __init__(self):
@@ -85,6 +90,7 @@ class ChatBackend:
         """Listens for new messages in Redis, and sends them to clients."""
         for data in self.__iter_data():
             print("RUNNING for data: ", data)
+
             for client in self.clients:
                 print("Client: ", client)
                 gevent.spawn(self.send, client, data)
@@ -133,6 +139,7 @@ def outbox(ws):
     print("IN OUTBOX")
     chats.register(ws)
 
+    print("PRINTING CLINTS", redis.get("clients"))
     while not ws.closed:
         # Context switch while `ChatBackend.start` is running in the background.
         gevent.sleep(0.1)
