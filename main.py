@@ -162,7 +162,7 @@ def disconnect():
 
 
 @app.route('/reset')
-def disconnect():
+def reset():
     the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
 
     redis.set("clients", 0)
