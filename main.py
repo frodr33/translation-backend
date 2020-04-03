@@ -134,7 +134,7 @@ def inbox(ws):
 
 
 @app.route('/connect')
-def homepage():
+def connect():
     the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
 
     print("CONNECTING")
@@ -146,7 +146,7 @@ def homepage():
 
 
 @app.route('/disconnect')
-def homepage():
+def disconnect():
     the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
 
     print("DISCONNECTING")
