@@ -140,7 +140,8 @@ def outbox(ws):
     chats.register(ws)
 
     num_connected = redis.get("clients")
-    print(num_connected)
+    num_connected = int(num_connected.decode("utf-8"))
+
     redis.set("clients", num_connected + 1)
     print("PRINTING CLIENTS", redis.get("clients"))
     while not ws.closed:
@@ -148,4 +149,5 @@ def outbox(ws):
         gevent.sleep(0.1)
 
     num_connected = redis.get("clients")
+    num_connected = int(num_connected.decode("utf-8"))
     redis.set("clients", num_connected + -1)
