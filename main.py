@@ -43,8 +43,8 @@ class TranslationAPI:
         lang_index = message.index(":") + 1
         message_index = message.index(":", lang_index) + 1
 
-        language = message[lang_index:message_index]
-        message_content = message[message_index:]
+        language = message[lang_index:message_index-1]
+        message_content = message[message_colon_index:]
 
         print("Translating for langauge: ", language)
         print(message_content)
