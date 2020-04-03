@@ -148,6 +148,7 @@ def outbox(ws):
         # Context switch while `ChatBackend.start` is running in the background.
         gevent.sleep(0.1)
 
+    print("SOCKET CLOSING")
     num_connected = redis.get("clients")
     num_connected = int(num_connected.decode("utf-8"))
-    redis.set("clients", num_connected + -1)
+    redis.set("clients", num_connected - 1)
