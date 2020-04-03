@@ -41,7 +41,7 @@ class TranslationAPI:
 
         # Remove prepended metadata
         lang_index = message.index(":") + 1
-        message_index = message.index(":", lang_index)
+        message_index = message.index(":", lang_index) + 1
 
         language = message[lang_index:message_index]
         message_content = message[message_index:]
@@ -57,7 +57,6 @@ class TranslationAPI:
         # Add metadata back in
         print("adding preprend")
         final_message = message[:message_index] + translated_text
-
 
         print("Translated: ", message, " to: ", final_message)
         return final_message
