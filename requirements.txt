@@ -7,3 +7,4 @@ Flask-Sockets
 redis
 gevent
 googletrans
+flask-cors

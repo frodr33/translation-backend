@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify
+from flask_cors import CORS
 from flask_sockets import Sockets
 from flask_socketio import SocketIO, emit, send, join_room
 from datetime import datetime
@@ -15,6 +16,7 @@ MAX_CLIENTS = 2  # 0 and 1
 CLIENTS = 0
 
 app = Flask(__name__)
+CORS(app)
 sockets = Sockets(app)
 redis = redis.from_url(REDIS_URL)
 
