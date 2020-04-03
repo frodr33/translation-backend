@@ -21,7 +21,7 @@ redis = redis.from_url(REDIS_URL)
 # Redis var setup
 num_clients = redis.get("clients")
 if not num_clients:
-    redis.set("clients", 1)
+    redis.set("clients", 0)
 
 
 class TranslationAPI:
@@ -139,7 +139,12 @@ def outbox(ws):
     print("IN OUTBOX")
     chats.register(ws)
 
-    print("PRINTING CLINTS", redis.get("clients"))
+    num_connected = redis.get("clients")
+    redis.set("clients", num_connected + 1)
+    print("PRINTING CLIENTS", redis.get("clients"))
     while not ws.closed:
         # Context switch while `ChatBackend.start` is running in the background.
         gevent.sleep(0.1)
+
+    num_connected = redis.get("clients")
+    redis.set("clients", num_connected + -1)
