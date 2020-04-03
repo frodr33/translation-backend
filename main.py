@@ -163,14 +163,12 @@ def connect():
     redis.sadd("languages", language)
     print("Current languages", redis.smembers("languages"))
 
-    langs = redis.smembers("languages")
+    while num_connected != 2:
+        num_connected = redis.get("clients")
+        num_connected = int(num_connected.decode("utf-8"))
 
-    while len(langs) != 2:
-        # Wait for other client to add its own lang
-        # Need to put timeouts?
-        langs = redis.smembers("languages")
         time.sleep(.5)
-        print("waiting for other client in /connect")
+        print("waiting for other client in /connect. Currently have: ", num_connected)
 
     lang_arr = []
     for lang in langs:
