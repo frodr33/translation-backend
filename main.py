@@ -140,6 +140,7 @@ def outbox(ws):
     chats.register(ws)
 
     num_connected = redis.get("clients")
+    print(num_connected)
     redis.set("clients", num_connected + 1)
     print("PRINTING CLIENTS", redis.get("clients"))
     while not ws.closed:
