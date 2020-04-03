@@ -144,6 +144,7 @@ def connect():
     num_connected = int(num_connected.decode("utf-8"))
 
     redis.set("clients", num_connected + 1)
+    print("PRINTING CLIENTS", redis.get("clients"))
     return jsonify("HELLO")
 
 
@@ -155,6 +156,7 @@ def disconnect():
     num_connected = redis.get("clients")
     num_connected = int(num_connected.decode("utf-8"))
     redis.set("clients", num_connected - 1)
+    print("PRINTING CLIENTS", redis.get("clients"))
 
     return "HELLO".format(time=the_time)
 
