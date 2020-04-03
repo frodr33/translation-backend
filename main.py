@@ -147,7 +147,7 @@ def inbox(ws):
 
 @app.route('/connect')
 def connect():
-    lang = request.args.get('lang')
+    language = request.args.get('lang')
 
     print("CONNECTING")
     num_connected = redis.get("clients")
@@ -156,11 +156,16 @@ def connect():
     redis.set("clients", num_connected + 1)
     print("PRINTING CLIENTS", redis.get("clients"))
 
-    redis.sadd("languages", lang)
+    redis.sadd("languages", language)
     print("Current languages", redis.smembers("languages"))
 
     langs = redis.smembers("languages")
-    return jsonify(langs)
+
+    lang_arr = []
+    for lang in langs:
+        lang_arr.append(lang)
+
+    return jsonify(lang_arr)
 
 
 @app.route('/disconnect')
