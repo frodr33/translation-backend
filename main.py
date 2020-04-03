@@ -161,9 +161,17 @@ def connect():
 
     langs = redis.smembers("languages")
 
+    while len(langs) != 2:
+        # Wait for other client to add its own lang
+        # Need to put timeouts?
+        langs = redis.smembers("languages")
+        time.sleep(.5)
+        print("waiting for other client in /connect")
+
     lang_arr = []
     for lang in langs:
-        lang_arr.append(lang)
+        lang_key = lang.decode("utf-8")
+        lang_arr.append(lang_key)
 
     return jsonify(lang_arr)
 
