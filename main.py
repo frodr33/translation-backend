@@ -183,7 +183,7 @@ def connect():
     # lang_arr = []
     lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
 
-    for lang in langs:
+    for lang in lang_arr:
         lang_key = lang.decode("utf-8")
         print("list contains language: ", lang_key)
         lang_arr.append(lang_key)
