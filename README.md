@@ -8,7 +8,7 @@ Backend for a real-time translation chat app
 4. Create a python virtual environment with `python3 -m venv venv`.
 5. Activate virutal environment with `. venv/bin/activate`
 6. Install python requirements `pip3 install -r requirements.txt`
-7. gunicorn -k flask_sockets.worker -b localhost:5000 main:app
+7. Use the command `gunicorn -k flask_sockets.worker -b localhost:5000 main:app` to start the server
 
 If done right, the server will start and will be up and running at http://localhost:5000/
 
