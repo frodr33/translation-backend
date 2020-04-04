@@ -152,8 +152,9 @@ def inbox(ws):
 @app.route('/connect')
 def connect():
     language = request.args.get('lang')
+    id = request.args.get('id')
 
-    print("CONNECTING")
+    print("Connecting client with ID: " + id)
     num_connected = redis.get("clients")
     num_connected = int(num_connected.decode("utf-8"))
 
