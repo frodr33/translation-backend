@@ -120,6 +120,40 @@ chats = ChatBackend()
 chats.start()
 
 
+class ConnectionMonitor:
+    def __init__(self):
+        self.clients = []
+
+    def register(self, client):
+        """Register a WebSocket connection for all socket connection updates"""
+        self.clients.append(client)
+
+    def send(self, client):
+        """Send socket connection updates to clients"""
+        try:
+            num_connected = redis.get("clients")
+            num_connected = int(num_connected.decode("utf-8"))
+            client.send(num_connected)
+        except Exception as err:
+            print(err)
+            self.clients.remove(client)
+
+    def run(self):
+        """Listens for new messages in Redis, and sends them to clients."""
+        while True:
+            for client in self.clients:
+                gevent.spawn(self.send, client)
+            gevent.sleep(1)
+
+    def start(self):
+        """Maintains Redis subscription in the background."""
+        gevent.spawn(self.run)
+
+
+connection_montior = ConnectionMonitor()
+connection_montior.start()
+
+
 @app.route('/')
 def homepage():
     the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
@@ -234,3 +268,13 @@ def outbox(ws):
     while not ws.closed:
         # Context switch while `ChatBackend.start` is running in the background.
         gevent.sleep(0.1)
+
+
+@sockets.route('/interruptions')
+def socket_monitor(ws):
+    """Pushes message to clients when there is a disconnection"""
+    print("In socket monitor")
+    connection_montior.register(ws)
+
+    while not ws.closed:
+        gevent.sleep(1)
