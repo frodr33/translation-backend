@@ -152,6 +152,9 @@ def inbox(ws):
 @app.route('/connect')
 def connect():
     language = request.args.get('lang')
+
+    # id parameter needed to avoid heroku caching request and waiting because
+    # it was exactly the same as previous request when languages are also the same
     id = request.args.get('id')
 
     print("Connecting client with ID: " + id)
@@ -161,22 +164,28 @@ def connect():
     redis.set("clients", num_connected + 1)
     print("PRINTING CLIENTS", redis.get("clients"))
 
-    redis.sadd("languages", language)
+
+    # List logic
+    redis.lpush("langs", language)
+
+    # redis.sadd("languages", language)
     print("Current languages", redis.smembers("languages"))
 
-    langs = redis.smembers("languages")
+    # langs = redis.smembers("languages")
 
     while num_connected != 2:
         num_connected = redis.get("clients")
         num_connected = int(num_connected.decode("utf-8"))
-        langs = redis.smembers("languages")
 
         time.sleep(.5)
         print("waiting for other client in /connect. Currently have: ", num_connected)
 
-    lang_arr = []
+    # lang_arr = []
+    lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
+
     for lang in langs:
         lang_key = lang.decode("utf-8")
+        print("list contains language: ", lang_key)
         lang_arr.append(lang_key)
 
     return jsonify(lang_arr)
@@ -185,15 +194,15 @@ def connect():
 @app.route('/disconnect')
 def disconnect():
     lang = request.args.get('lang')
+    print("Disconnecting with lang: ", lang)
 
-    print("DISCONNECTING")
     num_connected = redis.get("clients")
     num_connected = int(num_connected.decode("utf-8"))
     redis.set("clients", num_connected - 1)
     print("PRINTING CLIENTS", redis.get("clients"))
 
-    redis.srem("languages", lang)
-    print("Current languages", redis.smembers("languages"))
+    redis.lrem("langs", 1, lang)
+    print("Current languages", redis.lrange("langs", 0, redis.llen("langs")))
     return jsonify("HELLO")
 
 
