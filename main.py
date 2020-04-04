@@ -177,7 +177,7 @@ def connect():
         num_connected = redis.get("clients")
         num_connected = int(num_connected.decode("utf-8"))
 
-        time.sleep(.5)
+        # time.sleep(.5)
         print("waiting for other client in /connect. Currently have: ", num_connected)
 
     langs = []
@@ -189,9 +189,9 @@ def connect():
         else:
             lang_key = lang
 
-        print("list contains language: ", lang_key)
         langs.append(lang_key)
 
+    print("Language list currently contains: ", langs)
     return jsonify(langs)
 
 
