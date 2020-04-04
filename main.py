@@ -180,7 +180,7 @@ def connect():
         time.sleep(.5)
         print("waiting for other client in /connect. Currently have: ", num_connected)
 
-    # lang_arr = []
+    langs = []
     lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
 
     for lang in lang_arr:
@@ -190,9 +190,9 @@ def connect():
             lang_key = lang
 
         print("list contains language: ", lang_key)
-        lang_arr.append(lang_key)
+        langs.append(lang_key)
 
-    return jsonify(lang_arr)
+    return jsonify(langs)
 
 
 @app.route('/disconnect')
