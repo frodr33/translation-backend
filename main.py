@@ -132,7 +132,7 @@ class ConnectionMonitor:
         """Send socket connection updates to clients"""
         try:
             num_connected = redis.get("clients")
-            num_connected = int(num_connected.decode("utf-8"))
+            num_connected = num_connected.decode("utf-8")
             client.send(num_connected)
         except Exception as err:
             print(err)
