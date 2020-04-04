@@ -177,7 +177,7 @@ def connect():
         num_connected = redis.get("clients")
         num_connected = int(num_connected.decode("utf-8"))
 
-        # time.sleep(.5)
+        time.sleep(.5)
         print("waiting for other client in /connect. Currently have: ", num_connected)
 
     langs = []
@@ -218,6 +218,7 @@ def reset():
     print("PRINTING CLIENTS", redis.get("clients"))
 
     redis.delete("languages")
+    redis.delete("langs")
     print("PRINTING CLIENTS", redis.smembers("languages"))
 
     return "HELLO".format(time=the_time)
