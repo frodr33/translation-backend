@@ -177,10 +177,14 @@ def inbox(ws):
         gevent.sleep(0.1)
         message = ws.receive()
 
-        if message:
-            app.logger.info(u'Inserting message: {}'.format(message))
-            print("PUBLISHING MSG TO REDIS")
-            redis.publish(REDIS_CHANNEL, message)
+        if ":" in message:
+            if message:
+                app.logger.info(u'Inserting message: {}'.format(message))
+                print("PUBLISHING MSG TO REDIS")
+                redis.publish(REDIS_CHANNEL, message)
+        else:
+            print("received blob?")
+            print(message)
 
 
 @app.route('/connect')
@@ -191,39 +195,76 @@ def connect():
     # it was exactly the same as previous request when languages are also the same
     id = request.args.get('id')
 
-    print("Connecting client with ID: " + id)
-    num_connected = redis.get("clients")
-    num_connected = int(num_connected.decode("utf-8"))
+    # print("IN /CONNECT")
 
-    redis.set("clients", num_connected + 1)
-    print("PRINTING CLIENTS", redis.get("clients"))
+    if id is None or language is None:
+        # print("Reconnection received")
+        langs = []
+        lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
 
+        for lang in lang_arr:
+            if not isinstance(lang, str):
+                lang_key = lang.decode("utf-8")
+            else:
+                lang_key = lang
 
-    # List logic
-    redis.lpush("langs", language)
+            langs.append(lang_key)
 
-    # redis.sadd("languages", language)
-    print("Current languages", redis.smembers("languages"))
+        # print("Language list currently contains: ", langs)
+        return jsonify(langs)
 
-    # langs = redis.smembers("languages")
+    else:
+        print("IN ELSE")
+        print(language)
+        print(id)
 
-    while num_connected != 2:
+    try:
+        print("Connecting client with ID: " + id)
         num_connected = redis.get("clients")
         num_connected = int(num_connected.decode("utf-8"))
 
-        time.sleep(.5)
-        print("waiting for other client in /connect. Currently have: ", num_connected)
+        redis.set("clients", num_connected + 1)
+        print("PRINTING CLIENTS", redis.get("clients"))
 
-    langs = []
-    lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
 
-    for lang in lang_arr:
-        if not isinstance(lang, str):
-            lang_key = lang.decode("utf-8")
-        else:
-            lang_key = lang
+        # List logic
+        redis.lpush("langs", language)
 
-        langs.append(lang_key)
+        # redis.sadd("languages", language)
+        print("Current languages", redis.smembers("languages"))
+
+        # langs = redis.smembers("languages")
+
+        while num_connected != 2:
+            num_connected = redis.get("clients")
+            num_connected = int(num_connected.decode("utf-8"))
+
+            time.sleep(.5)
+            print("waiting for other client in /connect. Currently have: ", num_connected)
+
+        langs = []
+        lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
+
+        for lang in lang_arr:
+            if not isinstance(lang, str):
+                lang_key = lang.decode("utf-8")
+            else:
+                lang_key = lang
+
+            langs.append(lang_key)
+
+    except Exception as err:
+        print("IN EXCEPT")
+        langs = []
+        lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
+
+        for lang in lang_arr:
+            if not isinstance(lang, str):
+                lang_key = lang.decode("utf-8")
+            else:
+                lang_key = lang
+
+            langs.append(lang_key)
 
     print("Language list currently contains: ", langs)
     return jsonify(langs)
