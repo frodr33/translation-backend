@@ -18,6 +18,10 @@ CLIENTS = 0
 app = Flask(__name__)
 CORS(app)
 sockets = Sockets(app)
+
+POOL = redis.ConnectionPool(host="redis://localhost", port=6379, db=0)
+redis = redis.StrictRedis(connection_pool=POOL)
+
 redis = redis.from_url(REDIS_URL)
 
 chat_rooms = {}
@@ -374,14 +378,11 @@ def reset():
 @sockets.route('/receive')
 def outbox(ws):
     """Sends outgoing chat messages, via `ChatBackend`."""
-    print("WWHEN IS THIS BEING CALLED JESUS CHRIST")
     input = ""
     while not ws.closed and input == "":
-        print("WTF IS OGING ON")
         gevent.sleep(0.1)
         input = ws.receive()
 
-    print("HAHAHAHAHAHHHAAHHHAHAH")
     print("in outbox with input: " + input)
 
     colon_index = input.find(":")
