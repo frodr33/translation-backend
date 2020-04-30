@@ -5,9 +5,9 @@ from flask_sockets import Sockets
 from datetime import datetime
 import time
 import threading
-import redis
 import gevent
 from googletrans import Translator
+from redis.client import StrictRedis
 
 REDIS_URL = os.getenv('REDISTOGO_URL', "redis://localhost:6379")
 REDIS_CHANNEL = "translation-room"
@@ -19,10 +19,10 @@ app = Flask(__name__)
 CORS(app)
 sockets = Sockets(app)
 
-POOL = redis.ConnectionPool(host="redis://localhost", port=6379, db=0)
-redis = redis.StrictRedis(connection_pool=POOL)
+# POOL = redis.ConnectionPool(REDIS_URL, 6379)
+# redis = redis.StrictRedis(POOL)
 
-redis = redis.from_url(REDIS_URL)
+redis = StrictRedis.from_url(REDIS_URL)
 
 chat_rooms = {}
 connection_monitors = {}
@@ -117,7 +117,12 @@ class ChatBackend:
             for client in self.clients:
                 print("Client: ", client)
                 user_id = self.client_user_id_map[client]
-                gevent.spawn(self.send, client, user_id, data)
+
+                if redis.get(user_id):
+                    gevent.spawn(self.send, client, user_id, data)
+                else:
+                    print("remvoing client with user id: " + user_id)
+                    self.clients.remove(client)
 
     def start(self):
         """Maintains Redis subscription in the background."""
@@ -349,6 +354,7 @@ def connect():
 def disconnect():
     lang = request.args.get('lang')
     chat_room_id = request.args.get('roomID')
+    user_id = request.args.get('userID')
 
     print("Disconnecting with lang: ", lang)
 
@@ -358,6 +364,8 @@ def disconnect():
     num_connected = int(num_connected.decode("utf-8"))
 
     redis.set(chat_room_clients_key, num_connected - 1)
+    redis.delete(user_id)
+
     return jsonify("HELLO")
 
 
