@@ -9,7 +9,7 @@ import gevent
 from googletrans import Translator
 from redis.client import StrictRedis
 
-REDIS_URL = os.getenv('REDISTOGO_URL', "redis://localhost:6379")
+REDIS_URL = os.getenv('REDIS_URL', "redis://localhost:6379")
 REDIS_CHANNEL = "translation-room"
 
 MAX_CLIENTS = 2  # 0 and 1
@@ -123,7 +123,6 @@ class ChatBackend:
                 else:
                     print("remvoing client with user id: " + user_id)
                     self.clients.remove(client)
-
 
     def start(self):
         """Maintains Redis subscription in the background."""
