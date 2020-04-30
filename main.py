@@ -124,6 +124,7 @@ class ChatBackend:
                     print("remvoing client with user id: " + user_id)
                     self.clients.remove(client)
 
+
     def start(self):
         """Maintains Redis subscription in the background."""
         gevent.spawn(self.run)
