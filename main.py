@@ -2,7 +2,6 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sockets import Sockets
-from flask_socketio import SocketIO, emit, send, join_room
 from datetime import datetime
 import time
 import threading
@@ -21,6 +20,9 @@ CORS(app)
 sockets = Sockets(app)
 redis = redis.from_url(REDIS_URL)
 
+chat_rooms = {}
+connection_monitors = {}
+
 # Redis var setup
 num_clients = redis.get("clients")
 if not num_clients:
@@ -31,7 +33,7 @@ class TranslationAPI:
     def __init__(self):
         self.translator = Translator()
 
-    def translate(self, message, src="Eng", dest="Span"):
+    def translate(self, user_id, message, src="Eng", dest="Span"):
         if not isinstance(message, str):
             message = message.decode("utf-8")
 
@@ -43,11 +45,18 @@ class TranslationAPI:
         lang_index = message.index(":") + 1
         message_index = message.index(":", lang_index) + 1
 
-        language = message[lang_index:message_index-1]
+        # language = message[lang_index:message_index-1]
         message_content = message[message_index:]
+
+        print("GETTING preferred language for user: " + user_id)
+        language = redis.get(user_id)
+        print(language)
 
         print("Translating for langauge: ", language)
         print(message_content)
+
+        if not isinstance(language, str):
+            language = language.decode("utf-8")
 
         translation = self.translator.translate(message_content, dest=language)
 
@@ -63,11 +72,13 @@ class TranslationAPI:
 
 
 class ChatBackend:
-    def __init__(self):
+    def __init__(self, chat_room_id=REDIS_CHANNEL):
         self.clients = []
+        self.client_user_id_map = {}
         self.pubsub = redis.pubsub()
-        self.pubsub.subscribe(REDIS_CHANNEL)
+        self.pubsub.subscribe(chat_room_id)
         self.translation_api = TranslationAPI()
+        self.clients_key = chat_room_id + "_clients"
 
     def __iter_data(self):
         for message in self.pubsub.listen():
@@ -77,17 +88,18 @@ class ChatBackend:
                 app.logger.info(u'Sending message: {}'.format(data))
                 yield data
 
-    def register(self, client):
+    def register(self, client, user_id):
         """Register a WebSocket connection for Redis updates."""
         self.clients.append(client)
+        self.client_user_id_map[client] = user_id
 
-    def send(self, client, data):
+    def send(self, client, user_id, data):
         """Send given data to the registered client.
         Automatically discards invalid connections."""
 
         try:
             #  Initiate text-text translations
-            translated_data = self.translation_api.translate(data)
+            translated_data = self.translation_api.translate(user_id, data)
             client.send(translated_data)
         except Exception as err:
             print(err)
@@ -98,31 +110,20 @@ class ChatBackend:
         for data in self.__iter_data():
             print("RUNNING for data: ", data)
 
-            num_connected = redis.get("clients")
-            num_connected = int(num_connected.decode("utf-8"))
-
-            while num_connected != 2:
-                num_connected = redis.get("clients")
-                num_connected = int(num_connected.decode("utf-8"))
-                print("NUM CONNECTED IS: ", num_connected)
-                time.sleep(.5)
-
             for client in self.clients:
                 print("Client: ", client)
-                gevent.spawn(self.send, client, data)
+                user_id = self.client_user_id_map[client]
+                gevent.spawn(self.send, client, user_id, data)
 
     def start(self):
         """Maintains Redis subscription in the background."""
         gevent.spawn(self.run)
 
 
-chats = ChatBackend()
-chats.start()
-
-
 class ConnectionMonitor:
-    def __init__(self):
+    def __init__(self, clients_key="clients"):
         self.clients = []
+        self.clients_key = clients_key
 
     def register(self, client):
         """Register a WebSocket connection for all socket connection updates"""
@@ -131,7 +132,7 @@ class ConnectionMonitor:
     def send(self, client):
         """Send socket connection updates to clients"""
         try:
-            num_connected = redis.get("clients")
+            num_connected = redis.get(self.clients_key)
             num_connected = num_connected.decode("utf-8")
             client.send(num_connected)
         except Exception as err:
@@ -150,10 +151,6 @@ class ConnectionMonitor:
         gevent.spawn(self.run)
 
 
-connection_montior = ConnectionMonitor()
-connection_montior.start()
-
-
 @app.route('/')
 def homepage():
     the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
@@ -170,37 +167,149 @@ def homepage():
 @sockets.route('/submit')
 def inbox(ws):
     """Receives incoming chat messages, inserts them into Redis."""
-    print("INSIDE OF SUBMIT: ", ws)
-    # print()
 
     while not ws.closed:
         gevent.sleep(0.1)
         message = ws.receive()
+        if message:
+            if ":" in message:
+                print("/submit received: " + message)
+                room_index = message.rfind(":")
 
-        if ":" in message:
-            if message:
-                app.logger.info(u'Inserting message: {}'.format(message))
-                print("PUBLISHING MSG TO REDIS")
-                redis.publish(REDIS_CHANNEL, message)
+                room_id = message[room_index+1:]
+                redis.publish(room_id, message[0:room_index])
+            else:
+                print("Incorrectly Formatted Message, ABORT")
+
+
+def join_chat_room(chat_room_id, user_id, language):
+    # Called if chat room exists locally
+    chat_room_clients_key = chat_room_id + "_clients"
+    chat_room_languages_list = chat_room_id + "_languages"
+
+    if user_id is None:
+        # Socket Reconnecting to get refreshed version of list of languages
+        langs = []
+        lang_arr = redis.lrange(chat_room_languages_list, 0, redis.llen(chat_room_languages_list))
+
+        for lang in lang_arr:
+            if not isinstance(lang, str):
+                lang_key = lang.decode("utf-8")
+            else:
+                lang_key = lang
+
+            langs.append(lang_key)
+        return jsonify(langs)
+
+    # Join chat room
+    num_connected = redis.get(chat_room_clients_key)
+    num_connected = int(num_connected.decode("utf-8"))
+    redis.set(chat_room_clients_key, num_connected + 1)
+
+    # List logic
+    redis.lpush(chat_room_languages_list, language)
+
+    # while num_connected < 2:
+    #     num_connected = redis.get(chat_room_clients_key)
+    #     num_connected = int(num_connected.decode("utf-8"))
+    #
+    #     print("waiting for other client in /connect. Currently have: ", num_connected)
+    #     gevent.sleep(0.5)
+
+    langs = []
+    lang_arr = redis.lrange(chat_room_languages_list, 0, redis.llen(chat_room_languages_list))
+
+    for lang in lang_arr:
+        if not isinstance(lang, str):
+            lang_key = lang.decode("utf-8")
         else:
-            print("received blob?")
-            print(message)
+            lang_key = lang
+
+        langs.append(lang_key)
+
+    return langs
+
+
+def create_chat_room(chat_room_id, user_id, language):
+    print("Request to join chat room: " + chat_room_id)
+
+    redis.lpush("chat_rooms", chat_room_id)
+
+    chat_room_clients_key = chat_room_id + "_clients"
+    chat_room_languages_list = chat_room_id + "_languages"
+
+    if user_id is None:
+        # Socket Reconnecting to get refreshed version of list of languages
+        langs = []
+        lang_arr = redis.lrange(chat_room_languages_list, 0, redis.llen(chat_room_languages_list))
+
+        for lang in lang_arr:
+            if not isinstance(lang, str):
+                lang_key = lang.decode("utf-8")
+            else:
+                lang_key = lang
+
+            langs.append(lang_key)
+        return jsonify(langs)
+
+    # Create or update entry in redis map with clients for this chat room
+    chat_clients = redis.get(chat_room_clients_key)
+    if not chat_clients:
+        redis.set(chat_room_clients_key, 0)
+
+    # Creating Chat Room
+    chat_room = ChatBackend(chat_room_id)
+    chat_room.start()
+    chat_rooms[chat_room_id] = chat_room
+    print("Created chat room: " + str(chat_room) + " with room ID: " + chat_room_id)
+
+    # Creating Connection Monitor
+    room_connection_monitor = ConnectionMonitor(chat_room_clients_key)
+    room_connection_monitor.start()
+    connection_monitors[chat_room_id] = room_connection_monitor
+    print("Created room connection monitor: " + str(room_connection_monitor) + " for room ID: " + chat_room_id)
+
+    # Join chat room
+    num_connected = redis.get(chat_room_clients_key)
+    num_connected = int(num_connected.decode("utf-8"))
+    redis.set(chat_room_clients_key, num_connected + 1)
+
+    # List logic
+    redis.lpush(chat_room_languages_list, language)
+
+    # while num_connected < 2:
+    #     num_connected = redis.get(chat_room_clients_key)
+    #     num_connected = int(num_connected.decode("utf-8"))
+    #
+    #     print("waiting for other client in /connect. Currently have: ", num_connected)
+    #     gevent.sleep(0.5)
+
+    langs = []
+    lang_arr = redis.lrange(chat_room_languages_list, 0, redis.llen(chat_room_languages_list))
+
+    for lang in lang_arr:
+        if not isinstance(lang, str):
+            lang_key = lang.decode("utf-8")
+        else:
+            lang_key = lang
+
+        langs.append(lang_key)
+
+    return langs
 
 
 @app.route('/connect')
 def connect():
     language = request.args.get('lang')
-
-    # id parameter needed to avoid heroku caching request and waiting because
-    # it was exactly the same as previous request when languages are also the same
+    roomID = request.args.get('roomID')
     id = request.args.get('id')
 
-    # print("IN /CONNECT")
+    chat_room_languages_list = roomID + "_languages"
 
-    if id is None or language is None:
-        # print("Reconnection received")
+    if id is None:
+        # Socket Reconnecting to get refreshed version of list of languages
         langs = []
-        lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
+        lang_arr = redis.lrange(chat_room_languages_list, 0, redis.llen(chat_room_languages_list))
 
         for lang in lang_arr:
             if not isinstance(lang, str):
@@ -209,79 +318,42 @@ def connect():
                 lang_key = lang
 
             langs.append(lang_key)
-
-        # print("Language list currently contains: ", langs)
         return jsonify(langs)
 
+    user_id = id[0:len(id)-1]  # Removing :
+    redis.set(user_id, language)
+
+    # Join Chat Room
+    all_chat_rooms = redis.lrange("chat_rooms", 0, redis.llen("chat_rooms"))
+    if roomID in all_chat_rooms:
+        # Exists
+        print("Chat room with ID: " + roomID + " exists in redis")
+        if roomID in chat_rooms:
+            print("Chat room object with ID: " + roomID + "exists locally")
+            languages = join_chat_room(roomID, id, language)
+        else:
+            print("Chat room object with ID: " + roomID + "does not exist locally")
+            languages = create_chat_room(roomID, id, language)
     else:
-        print("IN ELSE")
-        print(language)
-        print(id)
+        print("Chat room with ID: " + roomID + " doesn't exist")
+        languages = create_chat_room(roomID, id, language)
 
-    try:
-        print("Connecting client with ID: " + id)
-        num_connected = redis.get("clients")
-        num_connected = int(num_connected.decode("utf-8"))
-
-        redis.set("clients", num_connected + 1)
-        print("PRINTING CLIENTS", redis.get("clients"))
-
-
-        # List logic
-        redis.lpush("langs", language)
-
-        # redis.sadd("languages", language)
-        print("Current languages", redis.smembers("languages"))
-
-        # langs = redis.smembers("languages")
-
-        while num_connected != 2:
-            num_connected = redis.get("clients")
-            num_connected = int(num_connected.decode("utf-8"))
-
-            time.sleep(.5)
-            print("waiting for other client in /connect. Currently have: ", num_connected)
-
-        langs = []
-        lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
-
-        for lang in lang_arr:
-            if not isinstance(lang, str):
-                lang_key = lang.decode("utf-8")
-            else:
-                lang_key = lang
-
-            langs.append(lang_key)
-
-    except Exception as err:
-        print("IN EXCEPT")
-        langs = []
-        lang_arr = redis.lrange("langs", 0, redis.llen("langs"))
-
-        for lang in lang_arr:
-            if not isinstance(lang, str):
-                lang_key = lang.decode("utf-8")
-            else:
-                lang_key = lang
-
-            langs.append(lang_key)
-
-    print("Language list currently contains: ", langs)
-    return jsonify(langs)
+    return jsonify(languages)
 
 
 @app.route('/disconnect')
 def disconnect():
     lang = request.args.get('lang')
+    chat_room_id = request.args.get('roomID')
+
     print("Disconnecting with lang: ", lang)
 
-    num_connected = redis.get("clients")
-    num_connected = int(num_connected.decode("utf-8"))
-    redis.set("clients", num_connected - 1)
-    print("PRINTING CLIENTS", redis.get("clients"))
+    chat_room_clients_key = chat_room_id + "_clients"
 
-    redis.lrem("langs", 1, lang)
-    print("Current languages", redis.lrange("langs", 0, redis.llen("langs")))
+    num_connected = redis.get(chat_room_clients_key)
+    num_connected = int(num_connected.decode("utf-8"))
+
+    redis.set(chat_room_clients_key, num_connected - 1)
     return jsonify("HELLO")
 
 
@@ -302,20 +374,50 @@ def reset():
 @sockets.route('/receive')
 def outbox(ws):
     """Sends outgoing chat messages, via `ChatBackend`."""
-    print("IN OUTBOX")
-    chats.register(ws)
-
-    print("PRINTING CLIENTS", redis.get("clients"))
-    while not ws.closed:
-        # Context switch while `ChatBackend.start` is running in the background.
+    print("WWHEN IS THIS BEING CALLED JESUS CHRIST")
+    input = ""
+    while not ws.closed and input == "":
+        print("WTF IS OGING ON")
         gevent.sleep(0.1)
+        input = ws.receive()
+
+    print("HAHAHAHAHAHHHAAHHHAHAH")
+    print("in outbox with input: " + input)
+
+    colon_index = input.find(":")
+    room_id = input[0:colon_index]
+    user_id = input[colon_index+1:len(input)-1]
+
+    print("user: " + user_id + " in outbox")
+    # get chat object from redis
+    chat_room = chat_rooms[room_id]
+    print("Found chat room: " + str(chat_room))
+
+    # ALSO need to sent chat room to this socket and then if it doesnt exist create it
+    chat_room.register(ws, user_id)
+
+    while not ws.closed:
+        gevent.sleep(0.1)
+
+
+@sockets.route('/test')
+def socket_test(ws):
+    print("In test")
+    lang = ws.receive()
+    print(lang)
 
 
 @sockets.route('/interruptions')
 def socket_monitor(ws):
     """Pushes message to clients when there is a disconnection"""
-    print("In socket monitor")
-    connection_montior.register(ws)
+    room_id = ws.receive()
+    print("In socket monitor, for room: " + room_id)
+
+    # Only current server will have this value
+    connection_monitor = connection_monitors[room_id]
+    print("Found connection_monitor: " + str(connection_monitor))
+
+    connection_monitor.register(ws)
 
     while not ws.closed:
         gevent.sleep(1)
