@@ -55,7 +55,7 @@ redis_wrapper = RedisWrapper()
 redis_client = redis_wrapper.redis_connect()
 print(redis_client)
 
-num_clients = redis_client.get("clients")
+num_clients = redis_client.get("clients:")
 if not num_clients:
     redis.set("clients", 0)
 
