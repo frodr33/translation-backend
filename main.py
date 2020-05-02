@@ -54,10 +54,10 @@ class TranslationAPI:
 
         # print("GETTING preferred language for user: " + user_id)
         language = redis.get(user_id)
-        print(language)
+        # print(language)
 
         # print("Translating for langauge: ", language)
-        print(message_content)
+        # print(message_content)
 
         if not isinstance(language, str):
             language = language.decode("utf-8")
@@ -79,6 +79,7 @@ class ChatBackend:
     def __init__(self, chat_room_id=REDIS_CHANNEL):
         self.clients = []
         self.client_user_id_map = {}
+        self.user_ids = []
         self.pubsub = redis.pubsub()
         self.pubsub.subscribe(chat_room_id)
         self.translation_api = TranslationAPI()
@@ -93,6 +94,16 @@ class ChatBackend:
 
     def register(self, client, user_id):
         """Register a WebSocket connection for Redis updates."""
+
+        #  If this user exists already in this, remove them.
+        if user_id in self.user_ids:
+            inv_map = {v: k for k, v in my_map.items()}
+            old_client = inv_map[user_id]
+
+            print("Deleting subscription to chat room:" + str(self) + " for old client: " + str(old_client))
+            self.clients.remove(old_client)
+            del self.client_user_id_map[old_client]
+
         self.clients.append(client)
         self.client_user_id_map[client] = user_id
 
@@ -338,7 +349,6 @@ def connect():
     if byte_roomID in all_chat_rooms:
         # Exists
         print("Chat room with ID: " + roomID + " exists in redis")
-        print("Chatrooms that currently exist on this server: " + str(chat_rooms))
 
         if roomID in chat_rooms:
             print("Chat room object with ID: " + roomID + "exists locally")
@@ -350,6 +360,7 @@ def connect():
         print("Chat room with ID: " + roomID + " doesn't exist")
         languages = create_chat_room(roomID, id, language)
 
+    print("Chatrooms that currently exist on this server: " + str(chat_rooms))
     return jsonify(languages)
 
 
