@@ -5,6 +5,6 @@ flask-socketio
 eventlet
 Flask-Sockets
 redis
-gevent
+gevent>=1.5a2
 googletrans
 flask-cors

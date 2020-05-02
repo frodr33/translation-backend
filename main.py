@@ -8,8 +8,9 @@ import threading
 import gevent
 from googletrans import Translator
 from redis.client import StrictRedis
+import redis
 
-REDIS_URL = os.getenv('REDIS_URL', "redis://localhost:6379")
+REDIS_URL = os.getenv('REDIS_URL', "redis://127.0. 0.1:6379")
 REDIS_CHANNEL = "translation-room"
 
 MAX_CLIENTS = 2  # 0 and 1
@@ -19,16 +20,42 @@ app = Flask(__name__)
 CORS(app)
 sockets = Sockets(app)
 
-# POOL = redis.ConnectionPool(REDIS_URL, 6379)
-# redis = redis.StrictRedis(POOL)
-
-redis = StrictRedis.from_url(REDIS_URL)
+print("Running on process: " + str(os.getpid()))
 
 chat_rooms = {}
 connection_monitors = {}
 
-# Redis var setup
-num_clients = redis.get("clients")
+
+class RedisWrapper:
+    instance = None
+
+    def __init__(self):
+        if not RedisWrapper.instance:
+            RedisWrapper.instance = RedisWrapper.__RedisWrapper()
+
+    def redis_connect(self):
+        return self.instance.redis_connect()
+
+    class __RedisWrapper:
+        def __init__(self):
+            self.url = os.getenv('REDIS_URL', "redis://localhost:6379")
+            self.host = self.url[0:self.url.rfind(":")].replace("redis://", "")
+            self.port = self.url[self.url.rfind(":")+1:]
+
+            print("host is: " + self.host)
+            print("port is: " + self.port)
+
+            self.pool = redis.ConnectionPool(host=self.host, port=self.port, db=0)
+
+        def redis_connect(self):
+            return StrictRedis(host=self.host, port=self.port, connection_pool=self.pool)
+
+
+redis_wrapper = RedisWrapper()
+redis_client = redis_wrapper.redis_connect()
+print(redis_client)
+
+num_clients = redis_client.get("clients")
 if not num_clients:
     redis.set("clients", 0)
 
