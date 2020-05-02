@@ -111,7 +111,8 @@ class ChatBackend:
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
         for data in self.__iter_data():
-            print("Chat room: " + str(self) + "received data: " + data + "and has clients: " + stsr(self.clients))
+            print("Chat room: " + str(self) + "received data: " + data.decode("utf-8") + "and has clients: " +
+                  str(self.clients))
 
             for client in self.clients:
                 user_id = self.client_user_id_map[client]
