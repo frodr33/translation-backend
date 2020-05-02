@@ -333,11 +333,9 @@ def connect():
 
     # Join Chat Room
     all_chat_rooms = redis.lrange("chat_rooms", 0, redis.llen("chat_rooms"))
+    byte_roomID = roomID.encode("utf-8")
 
-    print("existings chat rooms:")
-    print(all_chat_rooms)    
-
-    if roomID in all_chat_rooms:
+    if byte_roomID in all_chat_rooms:
         # Exists
         print("Chat room with ID: " + roomID + " exists in redis")
         if roomID in chat_rooms:
