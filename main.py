@@ -8,7 +8,7 @@ import threading
 import gevent
 from googletrans import Translator
 from redis.client import StrictRedis
-import redis
+from redis import ConnectionPool
 
 REDIS_URL = os.getenv('REDIS_URL', "redis://127.0. 0.1:6379")
 REDIS_CHANNEL = "translation-room"
@@ -45,17 +45,17 @@ class RedisWrapper:
             print("host is: " + self.host)
             print("port is: " + self.port)
 
-            self.pool = redis.ConnectionPool(host=self.host, port=self.port, db=0)
+            self.pool = ConnectionPool(host=self.host, port=self.port, db=0)
 
         def redis_connect(self):
-            return StrictRedis(host=self.host, port=self.port, connection_pool=self.pool)
+            return StrictRedis(connection_pool=self.pool)
 
 
 redis_wrapper = RedisWrapper()
-redis_client = redis_wrapper.redis_connect()
-print(redis_client)
+redis = redis_wrapper.redis_connect()
+print(redis)
 
-num_clients = redis_client.get("clients:")
+num_clients = redis.get("clients:")
 if not num_clients:
     redis.set("clients", 0)
 
