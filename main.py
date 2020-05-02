@@ -104,6 +104,7 @@ class ChatBackend:
             self.clients.remove(old_client)
             del self.client_user_id_map[old_client]
 
+        self.user_ids.append(user_id)
         self.clients.append(client)
         self.client_user_id_map[client] = user_id
 
