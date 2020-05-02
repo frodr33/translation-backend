@@ -52,11 +52,11 @@ class TranslationAPI:
         # language = message[lang_index:message_index-1]
         message_content = message[message_index:]
 
-        print("GETTING preferred language for user: " + user_id)
+        # print("GETTING preferred language for user: " + user_id)
         language = redis.get(user_id)
         print(language)
 
-        print("Translating for langauge: ", language)
+        # print("Translating for langauge: ", language)
         print(message_content)
 
         if not isinstance(language, str):
@@ -64,14 +64,14 @@ class TranslationAPI:
 
         translation = self.translator.translate(message_content, dest=language)
 
-        print("translated")
+        # print("translated")
         translated_text = translation.text
 
         # Add metadata back in
-        print("adding preprend")
+        # print("adding preprend")
         final_message = message[:message_index] + translated_text
 
-        print("Translated: ", message, " to: ", final_message)
+        # print("Translated: ", message, " to: ", final_message)
         return final_message
 
 
@@ -86,7 +86,6 @@ class ChatBackend:
 
     def __iter_data(self):
         for message in self.pubsub.listen():
-            print("ITERATING THROUGH REDIS PUBSUB: ", message)
             data = message.get('data')
             if message['type'] == 'message':
                 app.logger.info(u'Sending message: {}'.format(data))
@@ -112,10 +111,9 @@ class ChatBackend:
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
         for data in self.__iter_data():
-            print("RUNNING for data: ", data)
+            print("Chat room: " + str(self) + "received data: " + data + "and has clients: " + stsr(self.clients))
 
             for client in self.clients:
-                print("Client: ", client)
                 user_id = self.client_user_id_map[client]
 
                 if redis.get(user_id):
@@ -391,13 +389,11 @@ def outbox(ws):
         gevent.sleep(0.1)
         input = ws.receive()
 
-    print("in outbox with input: " + input)
-
     colon_index = input.find(":")
     room_id = input[0:colon_index]
     user_id = input[colon_index+1:len(input)-1]
 
-    print("user: " + user_id + " in outbox")
+    print("In /receive for user id: " + user_id + "and client: " + str(ws))
     # get chat object from redis
     chat_room = chat_rooms[room_id]
     print("Found chat room: " + str(chat_room))
@@ -420,7 +416,6 @@ def socket_test(ws):
 def socket_monitor(ws):
     """Pushes message to clients when there is a disconnection"""
     room_id = ws.receive()
-    print("In socket monitor, for room: " + room_id)
 
     # Only current server will have this value
     connection_monitor = connection_monitors[room_id]
