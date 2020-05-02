@@ -39,13 +39,7 @@ class RedisWrapper:
     class __RedisWrapper:
         def __init__(self):
             self.url = os.getenv('REDIS_URL', "redis://localhost:6379")
-            self.host = self.url[0:self.url.rfind(":")].replace("redis://", "")
-            self.port = self.url[self.url.rfind(":")+1:]
-
-            print("host is: " + self.host)
-            print("port is: " + self.port)
-
-            self.pool = ConnectionPool(host=self.host, port=self.port, db=0)
+            self.pool = ConnectionPool.from_url(self.url)
 
         def redis_connect(self):
             return StrictRedis(connection_pool=self.pool)
