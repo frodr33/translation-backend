@@ -97,7 +97,7 @@ class ChatBackend:
 
         #  If this user exists already in this, remove them.
         if user_id in self.user_ids:
-            inv_map = {v: k for k, v in my_map.items()}
+            inv_map = {v: k for k, v in self.client_user_id_map.items()}
             old_client = inv_map[user_id]
 
             print("Deleting subscription to chat room:" + str(self) + " for old client: " + str(old_client))
