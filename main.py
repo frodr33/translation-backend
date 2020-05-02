@@ -338,6 +338,8 @@ def connect():
     if byte_roomID in all_chat_rooms:
         # Exists
         print("Chat room with ID: " + roomID + " exists in redis")
+        print("Chatrooms that currently exist on this server: " + str(chat_rooms))
+
         if roomID in chat_rooms:
             print("Chat room object with ID: " + roomID + "exists locally")
             languages = join_chat_room(roomID, id, language)
