@@ -100,9 +100,17 @@ class ChatBackend:
             inv_map = {v: k for k, v in self.client_user_id_map.items()}
             old_client = inv_map[user_id]
 
-            print("Deleting subscription to chat room:" + str(self) + " for old client: " + str(old_client))
-            self.clients.remove(old_client)
-            del self.client_user_id_map[old_client]
+            try:
+                print("Deleting subscription to chat room:" + str(self) + " for old client: " + str(old_client))
+                self.clients.remove(old_client)
+                del self.client_user_id_map[old_client]
+            except Exception as e:
+                print("unable to remove from class lists")
+                print(e)
+                print(str(self.clients))
+                print(str(self.client_user_id_map))
+                print(str(self.user_ids))
+                print(str(self.user_id))
 
         self.user_ids.append(user_id)
         self.clients.append(client)
@@ -123,7 +131,7 @@ class ChatBackend:
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
         for data in self.__iter_data():
-            print("Chat room: " + str(self) + "received data: " + data.decode("utf-8") + "and has clients: " +
+            print("Chat room: " + str(self) + " received data: " + data.decode("utf-8") + " and has clients: " +
                   str(self.clients))
 
             for client in self.clients:
