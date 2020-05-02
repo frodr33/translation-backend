@@ -397,7 +397,7 @@ def outbox(ws):
     print("In /receive for user id: " + user_id + "and client: " + str(ws))
     # get chat object from redis
     chat_room = chat_rooms[room_id]
-    print("Found chat room: " + str(chat_room))
+    print(user_id + " found chat room: " + str(chat_room))
 
     # ALSO need to sent chat room to this socket and then if it doesnt exist create it
     chat_room.register(ws, user_id)
