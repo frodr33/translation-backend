@@ -108,6 +108,8 @@ class ChatBackend:
         self.translation_api = TranslationAPI()
         self.clients_key = chat_room_id + "_clients"
 
+        gevent.spawn(self.connection_tracker)
+
     def __iter_data(self):
         for message in self.pubsub.listen():
             data = message.get('data')
@@ -161,11 +163,28 @@ class ChatBackend:
                 user_id = self.client_user_id_map[client]
 
                 if redis.get(user_id):
+                    gevent.spawn(self.send, client, user_id, data)
+                else:
+                    print("remvoing client with user id: " + user_id)
+                    self.clients.remove(client)
+
+    def start(self):
+        """Maintains Redis subscription in the background."""
+        gevent.spawn(self.run)
+
+    def connection_tracker(self):
+        while True:
+            gevent.sleep(1)
+            for client in self.clients:
+                user_id = self.client_user_id_map[client]
+
+                if redis.get(user_id):
                     #  UserID is in redis
                     timestamp_key = user_id + "_timestamp"
                     now = datetime.datetime.now()
                     timestamp = now.timestamp()
-                    user_last_timestamp = redis.get(timestamp_key)
+                    b_user_last_timestamp = redis.get(timestamp_key)
+                    user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
 
                     if timestamp - user_last_timestamp > 60:
                         #  More than a minute has passed since last reconnection meaning user probably not
@@ -176,15 +195,6 @@ class ChatBackend:
                         redis.set(chat_room_clients_key, num_connected - 1)
                         redis.delete(user_id)
                         print("removing: " + user_id + "because was connection terminated")
-                    else:
-                        gevent.spawn(self.send, client, user_id, data)
-                else:
-                    print("remvoing client with user id: " + user_id)
-                    self.clients.remove(client)
-
-    def start(self):
-        """Maintains Redis subscription in the background."""
-        gevent.spawn(self.run)
 
 
 class ConnectionMonitor:
