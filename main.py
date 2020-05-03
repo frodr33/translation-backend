@@ -186,7 +186,7 @@ class ChatBackend:
                     b_user_last_timestamp = redis.get(timestamp_key)
                     user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
 
-                    if timestamp - user_last_timestamp > 60:
+                    if timestamp - user_last_timestamp > 75:
                         #  More than a minute has passed since last reconnection meaning user probably not
                         #  online anymore, so we remove user
                         num_connected = redis.get(self.clients_key)
@@ -194,7 +194,7 @@ class ChatBackend:
 
                         redis.set(self.clients_key, num_connected - 1)
                         redis.delete(user_id)
-                        print("removing: " + user_id + "because was connection terminated")
+                        print("removing: " + user_id + " because connection was terminated")
 
 
 class ConnectionMonitor:
