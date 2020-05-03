@@ -192,7 +192,7 @@ class ChatBackend:
                         num_connected = redis.get(self.clients_key)
                         num_connected = int(num_connected.decode("utf-8"))
 
-                        redis.set(chat_room_clients_key, num_connected - 1)
+                        redis.set(self.clients_key, num_connected - 1)
                         redis.delete(user_id)
                         print("removing: " + user_id + "because was connection terminated")
 
