@@ -9,6 +9,7 @@ import gevent
 from googletrans import Translator
 from redis.client import StrictRedis
 from redis import ConnectionPool
+import datetime
 
 REDIS_URL = os.getenv('REDIS_URL', "redis://127.0. 0.1:6379")
 REDIS_CHANNEL = "translation-room"
@@ -160,7 +161,23 @@ class ChatBackend:
                 user_id = self.client_user_id_map[client]
 
                 if redis.get(user_id):
-                    gevent.spawn(self.send, client, user_id, data)
+                    #  UserID is in redis
+                    timestamp_key = user_id + "_timestamp"
+                    now = datetime.datetiem.now()
+                    timestamp = now.timestamp()
+                    user_last_timestamp = redis.get(timestamp_key)
+
+                    if timestamp - user_last_timestamp > 60:
+                        #  More than a minute has passed since last reconnection meaning user probably not
+                        #  online anymore, so we remove user
+                        num_connected = redis.get(self.clients_key)
+                        num_connected = int(num_connected.decode("utf-8"))
+
+                        redis.set(chat_room_clients_key, num_connected - 1)
+                        redis.delete(user_id)
+                        print("removing: " + user_id + "because was connection terminated")
+                    else:
+                        gevent.spawn(self.send, client, user_id, data)
                 else:
                     print("remvoing client with user id: " + user_id)
                     self.clients.remove(client)
@@ -327,13 +344,6 @@ def create_chat_room(chat_room_id, user_id, language):
     # List logic
     redis.lpush(chat_room_languages_list, language)
 
-    # while num_connected < 2:
-    #     num_connected = redis.get(chat_room_clients_key)
-    #     num_connected = int(num_connected.decode("utf-8"))
-    #
-    #     print("waiting for other client in /connect. Currently have: ", num_connected)
-    #     gevent.sleep(0.5)
-
     langs = []
     lang_arr = redis.lrange(chat_room_languages_list, 0, redis.llen(chat_room_languages_list))
 
@@ -372,6 +382,12 @@ def connect():
 
     user_id = id[0:len(id)-1]  # Removing :
     redis.set(user_id, language)
+
+    # Put time stamp in
+    timestamp_key = user_id + "_timestamp"
+    now = datetime.datetiem.now()
+    timestamp = now.timestamp()
+    redis.set(timestamp_key, timestamp)
 
     # Join Chat Room
     all_chat_rooms = redis.lrange("chat_rooms", 0, redis.llen("chat_rooms"))
@@ -439,6 +455,12 @@ def outbox(ws):
     colon_index = input.find(":")
     room_id = input[0:colon_index]
     user_id = input[colon_index+1:len(input)-1]
+
+    # Put time stamp in
+    timestamp_key = user_id + "_timestamp"
+    now = datetime.datetiem.now()
+    timestamp = now.timestamp()
+    redis.set(timestamp_key, timestamp)
 
     print("In /receive for user id: " + user_id + "and client: " + str(ws))
     # get chat object from redis
