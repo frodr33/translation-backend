@@ -163,7 +163,7 @@ class ChatBackend:
                 if redis.get(user_id):
                     #  UserID is in redis
                     timestamp_key = user_id + "_timestamp"
-                    now = datetime.datetiem.now()
+                    now = datetime.datetime.now()
                     timestamp = now.timestamp()
                     user_last_timestamp = redis.get(timestamp_key)
 
@@ -385,7 +385,7 @@ def connect():
 
     # Put time stamp in
     timestamp_key = user_id + "_timestamp"
-    now = datetime.datetiem.now()
+    now = datetime.datetime.now()
     timestamp = now.timestamp()
     redis.set(timestamp_key, timestamp)
 
@@ -458,7 +458,7 @@ def outbox(ws):
 
     # Put time stamp in
     timestamp_key = user_id + "_timestamp"
-    now = datetime.datetiem.now()
+    now = datetime.datetime.now()
     timestamp = now.timestamp()
     redis.set(timestamp_key, timestamp)
 
