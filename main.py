@@ -120,7 +120,7 @@ class ChatBackend:
     def register(self, client, user_id):
         """Register a WebSocket connection for Redis updates."""
 
-        #  If this user exists already in this, remove them.
+        #  If this user exists already in this, remove old socket
         if user_id in self.user_ids:
             inv_map = {v: k for k, v in self.client_user_id_map.items()}
             old_client = inv_map[user_id]
@@ -129,17 +129,19 @@ class ChatBackend:
                 print("Deleting subscription to chat room:" + str(self) + " for old client: " + str(old_client))
                 self.clients.remove(old_client)
                 del self.client_user_id_map[old_client]
+                self.clients.append(client)
+                self.client_user_id_map[client] = user_id
             except Exception as e:
                 print("unable to remove from class lists")
                 print(e)
                 print(str(self.clients))
                 print(str(self.client_user_id_map))
                 print(str(self.user_ids))
-                print(str(self.user_id))
-
-        self.user_ids.append(user_id)
-        self.clients.append(client)
-        self.client_user_id_map[client] = user_id
+                print(str(user_id))
+        else:
+            self.user_ids.append(user_id)
+            self.clients.append(client)
+            self.client_user_id_map[client] = user_id
 
     def send(self, client, user_id, data):
         """Send given data to the registered client.
