@@ -413,8 +413,10 @@ def outbox(ws):
     user_id = input[colon_index+1:len(input)]
 
     print("/receive on host: " + str(os.getpid()) + " for user: " + user_id)
+    print("/receive on host: " + str(os.getpid()) + ", room_id: " + room_id)
+    print("/receive on host: " + str(os.getpid()) + ", has chatrooms: " + str(chat_rooms))
     chat_room = chat_rooms[room_id]
-    print(user_id + " found chat room: " + str(chat_room))
+    print("/receive on host: " + str(os.getpid()) + "found chat room: " + str(chat_room))
 
     chat_room.register(ws, user_id)
 
