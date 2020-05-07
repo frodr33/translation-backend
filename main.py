@@ -190,8 +190,8 @@ class ChatBackend:
                     user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
 
                     print("getting timestamps for: " + timestamp_key)
-                    print("previous time stamp: " + user_last_timestamp)
-                    print("now time stamp: " + timestamp)
+                    print("previous time stamp: " + str(user_last_timestamp))
+                    print("now time stamp: " + str(timestamp))
                     print("difference: " + str(timestamp - user_last_timestamp))
 
                     if timestamp - user_last_timestamp > 15:
@@ -504,7 +504,7 @@ def health_check(ws):
             timestamp = now.timestamp()
             redis.set(timestamp_key, timestamp)
 
-            print("Updated: " + timestamp_key + " with timestamp: " + timestamp)
+            print("Updated: " + timestamp_key + " with timestamp: " + str(timestamp))
 
 
 @sockets.route('/test')
