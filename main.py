@@ -377,7 +377,7 @@ def connect():
             langs.append(lang_key)
         return jsonify(langs)
 
-    user_id = id[0:len(id)-1]  # Removing :
+    user_id = id[0:len(id)]
     redis.set(user_id, language)
 
     # Put time stamp in
