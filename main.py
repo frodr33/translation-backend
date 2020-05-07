@@ -499,6 +499,10 @@ def health_check(ws):
         if user_id:
             print("in /healthcheck for user_id: " + user_id)
 
+            if ":" in user_id:
+                colon_index = user_id.find(":")
+                user_id = user_id[0:colon_index]
+
             # Put time stamp in
             timestamp_key = user_id + "_timestamp"
             now = datetime.datetime.now()
