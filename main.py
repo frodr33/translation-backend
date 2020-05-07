@@ -114,12 +114,9 @@ class ChatBackend:
                 del self.client_user_id_map[old_client]
                 self.clients.append(client)
                 self.client_user_id_map[client] = user_id
-            except Exception as e:
+            except Exception as _:
                 print("Unable to remove old client, potentially due to change "
                       + "in host that client connects to due to load balancing in high traffic")
-                print(e)
-                print("Old client: " + str(old_client))
-                print("Client List: " + str(self.clients))
                 self.clients.append(client)
                 self.client_user_id_map[client] = user_id
         else:
@@ -148,9 +145,6 @@ class ChatBackend:
             # Add to queue for each user id
             for client in self.clients:
                 user_id = self.client_user_id_map[client]
-
-                #  Check if socket is closed????
-                print("Is client: " + str(client) + " closed?: " + str(client.closed))
 
                 if redis.get(user_id):
                     gevent.spawn(self.send, client, user_id, data)
