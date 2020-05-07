@@ -415,6 +415,11 @@ def outbox(ws):
     print("/receive on host: " + str(os.getpid()) + " for user: " + user_id)
     print("/receive on host: " + str(os.getpid()) + ", room_id: " + room_id)
     print("/receive on host: " + str(os.getpid()) + ", has chatrooms: " + str(chat_rooms))
+
+    if room_id not in chat_rooms:
+        # This host doesn't not have a chat room created yet
+        create_chat_room(room_id, user_id, "en")
+
     chat_room = chat_rooms[room_id]
     print("/receive on host: " + str(os.getpid()) + "found chat room: " + str(chat_room))
 
