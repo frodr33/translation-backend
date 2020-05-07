@@ -78,7 +78,7 @@ class TranslationAPI:
         translation = self.translator.translate(message_content, dest=language)
         translated_text = translation.text
         final_message = message[:colon_index+1] + translated_text
-        print("Sending message: " + final_message)
+        # print("Sending message: " + final_message)
         return final_message
 
 
@@ -95,21 +95,10 @@ class ChatBackend:
         gevent.spawn(self.connection_tracker)
 
     def __iter_data(self):
-        now = datetime.datetime.now()
-        listener_started = now.timestamp()
-
         for message in self.pubsub.listen():
             data = message.get('data')
-            print("Chat room: " + str(self) + " received data: " + str(data))
             if message['type'] == 'message':
-                app.logger.info(u'Sending message: {}'.format(data))
                 yield data
-
-        now = datetime.datetime.now()
-        listener_ended = now.timestamp()
-
-        print("Connection aborted, close chatrooms or remake connection. Connection alive for: "
-              + str(listener_ended - listener_started))
 
     def register(self, client, user_id):
         """Register a WebSocket connection for Redis updates."""
@@ -120,7 +109,7 @@ class ChatBackend:
             old_client = inv_map[user_id]
 
             try:
-                print("Deleting subscription to chat room:" + str(self) + " for old client: " + str(old_client))
+                print("DELETING SUBSCRIPTION on host: " + str(os.getpid()) + " for user: " + user_id)
                 self.clients.remove(old_client)
                 del self.client_user_id_map[old_client]
                 self.clients.append(client)
@@ -150,8 +139,8 @@ class ChatBackend:
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
         for data in self.__iter_data():
-            print("Chat room: " + str(self) + " received data: " + data.decode("utf-8") + " and has clients: " +
-                  str(self.clients))
+            # print("Chat room: " + str(self) + " received data: " + data.decode("utf-8") + " and has clients: " +
+            #       str(self.clients))
 
             # Add to queue for each user id
             for client in self.clients:
@@ -160,7 +149,7 @@ class ChatBackend:
                 if redis.get(user_id):
                     gevent.spawn(self.send, client, user_id, data)
                 else:
-                    print("remvoing client with user id: " + user_id)
+                    print("REMOVING CLIENT on host: " + str(os.getpid()) + " for user: " + user_id)
                     self.clients.remove(client)
 
     def start(self):
@@ -191,7 +180,8 @@ class ChatBackend:
                         redis.set(self.clients_key, num_connected - 1)
                         redis.delete(user_id)
 
-                        print("removing: " + user_id + " because connection was terminated")
+                        print("removing: " + user_id + " on host: " + str(os.getpid()) +
+                              " because connection was terminated")
                         print("Current timestamp: " + str(timestamp))
                         print("Latest timestamo: " + str(user_last_timestamp))
 
@@ -249,7 +239,8 @@ def inbox(ws):
         message = ws.receive()
         if message:
             if ":" in message:
-                print("/submit received: " + message)
+                print("/submit on host: " + str(os.getpid()) + " for message: " + message)
+                # print("/submit received: " + message)
                 room_index = message.rfind(":")
 
                 room_id = message[room_index+1:]
@@ -284,13 +275,6 @@ def join_chat_room(chat_room_id, user_id, language):
 
     # List logic
     redis.lpush(chat_room_languages_list, language)
-
-    # while num_connected < 2:
-    #     num_connected = redis.get(chat_room_clients_key)
-    #     num_connected = int(num_connected.decode("utf-8"))
-    #
-    #     print("waiting for other client in /connect. Currently have: ", num_connected)
-    #     gevent.sleep(0.5)
 
     langs = []
     lang_arr = redis.lrange(chat_room_languages_list, 0, redis.llen(chat_room_languages_list))
@@ -420,20 +404,6 @@ def connect():
     return jsonify(languages)
 
 
-@app.route('/reset')
-def reset():
-    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
-
-    redis.set("clients", 0)
-    print("PRINTING CLIENTS", redis.get("clients"))
-
-    redis.delete("languages")
-    redis.delete("langs")
-    print("PRINTING CLIENTS", redis.smembers("languages"))
-
-    return "HELLO".format(time=the_time)
-
-
 @sockets.route('/receive')
 def outbox(ws):
     """Sends outgoing chat messages, via `ChatBackend`."""
@@ -442,14 +412,14 @@ def outbox(ws):
         gevent.sleep(0.1)
         input = ws.receive()
 
-    print("in receive with input: " + input)
+    # print("in receive with input: " + input)
     colon_index = input.find(":")
     room_id = input[0:colon_index]
     user_id = input[colon_index+1:len(input)]
 
-    print("In /receive for user id: " + user_id + " and client: " + str(ws))
+    print("/receive on host: " + str(os.getpid()) + " for user: " + user_id)
     chat_room = chat_rooms[room_id]
-    print(user_id + " found chat room: " + str(chat_room))
+    # print(user_id + " found chat room: " + str(chat_room))
 
     chat_room.register(ws, user_id)
 
@@ -461,6 +431,8 @@ def outbox(ws):
 def health_check(ws):
     while not ws.closed:
         user_id = ws.receive()
+
+        print("/healthcheck on host: " + str(os.getpid()) + " for user: " + user_id)
         if user_id:
             if ":" in user_id:
                 colon_index = user_id.find(":")
@@ -470,7 +442,7 @@ def health_check(ws):
             timestamp_key = user_id + "_timestamp"
             now = datetime.datetime.now()
             timestamp = now.timestamp()
-            print("/healthcheck setting timestamp to: " + str(timestamp) + " for user: " + user_id)
+            # print("/healthcheck setting timestamp to: " + str(timestamp) + " for user: " + user_id)
             redis.set(timestamp_key, timestamp)
 
 
