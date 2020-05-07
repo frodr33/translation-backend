@@ -65,7 +65,7 @@ class TranslationAPI:
 
         # Remove prepended metadata
         colon_index = message.find(":")
-        message_content = message[colon_index:]
+        message_content = message[colon_index+1:]
 
         language = redis.get(user_id)
 
@@ -74,12 +74,7 @@ class TranslationAPI:
 
         translation = self.translator.translate(message_content, dest=language)
         translated_text = translation.text
-
-        print("translated text: " + translated_text)
-        print("prepend: " + message[:colon_index+1])
-
         final_message = message[:colon_index+1] + translated_text
-
         return final_message
 
 
