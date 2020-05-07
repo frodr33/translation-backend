@@ -452,19 +452,12 @@ def outbox(ws):
     print("in receive with input: " + input)
     colon_index = input.find(":")
     room_id = input[0:colon_index]
-    user_id = input[colon_index+1:len(input)-1]
+    user_id = input[colon_index+1:len(input)]
 
-    # timestamp_key = user_id + "_timestamp"
-    # now = datetime.datetime.now()
-    # timestamp = now.timestamp()
-    # redis.set(timestamp_key, timestamp)
-
-    print("In /receive for user id: " + user_id + "and client: " + str(ws))
-    # get chat object from redis
+    print("In /receive for user id: " + user_id + " and client: " + str(ws))
     chat_room = chat_rooms[room_id]
     print(user_id + " found chat room: " + str(chat_room))
 
-    # ALSO need to sent chat room to this socket and then if it doesnt exist create it
     chat_room.register(ws, user_id)
 
     while not ws.closed:
