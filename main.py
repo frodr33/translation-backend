@@ -290,7 +290,7 @@ def join_chat_room(chat_room_id, user_id, language):
     return langs
 
 
-def create_chat_room(chat_room_id, user_id, language):
+def create_chat_room(chat_room_id, user_id, language, new_member=True):
     redis.lpush("chat_rooms", chat_room_id)
 
     chat_room_clients_key = chat_room_id + "_clients"
@@ -328,9 +328,10 @@ def create_chat_room(chat_room_id, user_id, language):
     # print("Created room connection monitor: " + str(room_connection_monitor) + " for room ID: " + chat_room_id)
 
     # Join chat room
-    num_connected = redis.get(chat_room_clients_key)
-    num_connected = int(num_connected.decode("utf-8"))
-    redis.set(chat_room_clients_key, num_connected + 1)
+    if new_member:
+        num_connected = redis.get(chat_room_clients_key)
+        num_connected = int(num_connected.decode("utf-8"))
+        redis.set(chat_room_clients_key, num_connected + 1)
 
     # List logic
     redis.lpush(chat_room_languages_list, language)
@@ -386,10 +387,10 @@ def connect():
 
     if byte_roomID in all_chat_rooms:
         if roomID in chat_rooms:
-            print("Chat room object with ID: " + roomID + "exists locally")
+            print("Chat room object with ID: " + roomID + " exists locally")
             languages = join_chat_room(roomID, id, language)
         else:
-            print("Chat room object with ID: " + roomID + "does not exist locally")
+            print("Chat room object with ID: " + roomID + " does not exist locally")
             languages = create_chat_room(roomID, id, language)
     else:
         print("Chat room with ID: " + roomID + " doesn't exist")
@@ -418,7 +419,7 @@ def outbox(ws):
 
     if room_id not in chat_rooms:
         # This host doesn't not have a chat room created yet
-        create_chat_room(room_id, user_id, "en")
+        create_chat_room(room_id, user_id, "en", False)
 
     chat_room = chat_rooms[room_id]
     print("/receive on host: " + str(os.getpid()) + "found chat room: " + str(chat_room))
