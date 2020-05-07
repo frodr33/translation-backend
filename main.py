@@ -414,7 +414,7 @@ def outbox(ws):
 
     print("/receive on host: " + str(os.getpid()) + " for user: " + user_id)
     chat_room = chat_rooms[room_id]
-    # print(user_id + " found chat room: " + str(chat_room))
+    print(user_id + " found chat room: " + str(chat_room))
 
     chat_room.register(ws, user_id)
 
@@ -427,13 +427,13 @@ def health_check(ws):
     while not ws.closed:
         user_id = ws.receive()
 
-        print("/healthcheck on host: " + str(os.getpid()) + " for user: " + user_id)
         if user_id:
             if ":" in user_id:
                 colon_index = user_id.find(":")
                 user_id = user_id[0:colon_index]
 
             # Put time stamp in
+            # print("/healthcheck on host: " + str(os.getpid()) + " for user: " + user_id)
             timestamp_key = user_id + "_timestamp"
             now = datetime.datetime.now()
             timestamp = now.timestamp()
