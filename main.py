@@ -65,7 +65,7 @@ class TranslationAPI:
             message = message.decode("utf-8")
 
         # Remove prepended metadata
-        colon_index = message.index(":", lang_index)
+        colon_index = message.find(":")
         message_content = message[colon_index:]
 
         language = redis.get(user_id)
