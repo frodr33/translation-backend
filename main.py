@@ -94,12 +94,21 @@ class ChatBackend:
         gevent.spawn(self.connection_tracker)
 
     def __iter_data(self):
+        now = datetime.datetime.now()
+        listener_started = now.timestamp()
+
         for message in self.pubsub.listen():
             data = message.get('data')
             print("Chat room: " + str(self) + " received data: " + str(data))
             if message['type'] == 'message':
                 app.logger.info(u'Sending message: {}'.format(data))
                 yield data
+
+        now = datetime.datetime.now()
+        listener_ended = now.timestamp()
+
+        print("Connection aborted, close chatrooms or remake connection. Connection alive for: "
+              + str(listener_ended - listener_started))
 
     def register(self, client, user_id):
         """Register a WebSocket connection for Redis updates."""
