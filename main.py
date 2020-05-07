@@ -145,8 +145,13 @@ class ChatBackend:
             print("Chat room: " + str(self) + " received data: " + data.decode("utf-8") + " and has clients: " +
                   str(self.clients))
 
+            # Add to queue for each user id
+
             for client in self.clients:
                 user_id = self.client_user_id_map[client]
+
+                #  Check if socket is closed????
+                print("Is client: " + str(client) + " closed?: " + str(client.closed))
 
                 if redis.get(user_id):
                     gevent.spawn(self.send, client, user_id, data)
