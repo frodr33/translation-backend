@@ -490,13 +490,14 @@ def outbox(ws):
 def health_check(ws):
     while not ws.closed:
         user_id = ws.receive()
-        print("in /healthcheck for user_id: " + user_id)
+        if user_id:
+            print("in /healthcheck for user_id: " + user_id)
 
-        # Put time stamp in
-        timestamp_key = user_id + "_timestamp"
-        now = datetime.datetime.now()
-        timestamp = now.timestamp()
-        redis.set(timestamp_key, timestamp)
+            # Put time stamp in
+            timestamp_key = user_id + "_timestamp"
+            now = datetime.datetime.now()
+            timestamp = now.timestamp()
+            redis.set(timestamp_key, timestamp)
 
 
 @sockets.route('/test')
