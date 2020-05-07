@@ -40,7 +40,6 @@ class RedisWrapper:
     class __RedisWrapper:
         def __init__(self):
             self.url = os.getenv('REDIS_URL', "redis://localhost:6379")
-            # self.pool = ConnectionPool.from_url(self.url)
 
         def redis_connect(self):
             return StrictRedis.from_url(self.url)
@@ -75,6 +74,10 @@ class TranslationAPI:
 
         translation = self.translator.translate(message_content, dest=language)
         translated_text = translation.text
+
+        print("translated text: " + translated_text)
+        print("prepend: " + message[:colon_index+1])
+
         final_message = message[:colon_index+1] + translated_text
 
         return final_message
