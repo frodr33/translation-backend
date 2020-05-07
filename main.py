@@ -75,6 +75,7 @@ class TranslationAPI:
         translation = self.translator.translate(message_content, dest=language)
         translated_text = translation.text
         final_message = message[:colon_index+1] + translated_text
+        print("Sending message: " + final_message)
         return final_message
 
 
@@ -168,8 +169,6 @@ class ChatBackend:
 
                     b_user_last_timestamp = redis.get(timestamp_key)
                     user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
-
-                    print("Time difference for user ID: " + user_id + "is: " + str(timestamp - user_last_timestamp))
 
                     if timestamp - user_last_timestamp > 15:
                         #  More than a minute has passed since last reconnection meaning user probably not
@@ -467,8 +466,6 @@ def health_check(ws):
     while not ws.closed:
         user_id = ws.receive()
         if user_id:
-            print("in /healthcheck for user_id: " + user_id)
-
             if ":" in user_id:
                 colon_index = user_id.find(":")
                 user_id = user_id[0:colon_index]
