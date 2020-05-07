@@ -96,7 +96,7 @@ class ChatBackend:
     def __iter_data(self):
         for message in self.pubsub.listen():
             data = message.get('data')
-            print("Chat room: " + self + " received data: " + data)
+            print("Chat room: " + str(self) + " received data: " + data)
             if message['type'] == 'message':
                 app.logger.info(u'Sending message: {}'.format(data))
                 yield data
