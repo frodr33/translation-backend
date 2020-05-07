@@ -185,8 +185,14 @@ class ChatBackend:
                     timestamp_key = user_id + "_timestamp"
                     now = datetime.datetime.now()
                     timestamp = now.timestamp()
+
                     b_user_last_timestamp = redis.get(timestamp_key)
                     user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
+
+                    print("getting timestamps for: " + timestamp_key)
+                    print("previous time stamp: " + user_last_timestamp)
+                    print("now time stamp: " + timestamp)
+                    print("difference: " + str(timestamp - user_last_timestamp))
 
                     if timestamp - user_last_timestamp > 15:
                         #  More than a minute has passed since last reconnection meaning user probably not
@@ -468,11 +474,10 @@ def outbox(ws):
     room_id = input[0:colon_index]
     user_id = input[colon_index+1:len(input)-1]
 
-    # Put time stamp in
-    timestamp_key = user_id + "_timestamp"
-    now = datetime.datetime.now()
-    timestamp = now.timestamp()
-    redis.set(timestamp_key, timestamp)
+    # timestamp_key = user_id + "_timestamp"
+    # now = datetime.datetime.now()
+    # timestamp = now.timestamp()
+    # redis.set(timestamp_key, timestamp)
 
     print("In /receive for user id: " + user_id + "and client: " + str(ws))
     # get chat object from redis
@@ -498,6 +503,8 @@ def health_check(ws):
             now = datetime.datetime.now()
             timestamp = now.timestamp()
             redis.set(timestamp_key, timestamp)
+
+            print("Updated: " + timestamp_key + " with timestamp: " + timestamp)
 
 
 @sockets.route('/test')
