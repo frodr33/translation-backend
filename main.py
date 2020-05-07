@@ -11,7 +11,7 @@ from redis.client import StrictRedis
 from redis import ConnectionPool
 import datetime
 
-REDIS_URL = os.getenv('REDIS_URL', "redis://127.0. 0.1:6379")
+# REDIS_URL = os.getenv('REDIS_URL', "redis://127.0. 0.1:6379")
 REDIS_CHANNEL = "translation-room"
 
 MAX_CLIENTS = 2  # 0 and 1
@@ -39,10 +39,12 @@ class RedisWrapper:
 
     class __RedisWrapper:
         def __init__(self):
-            self.url = os.getenv('REDIS_URL', "redis://localhost:6379")
+            # self.url = os.getenv('REDIS_URL', "redis://localhost:6379")
+            self.host = "13.92.228.127"
+            self.port = "6379"
 
         def redis_connect(self):
-            return StrictRedis.from_url(self.url)
+            return StrictRedis(host=self.host, port=self.port, db=0)
 
 
 redis_wrapper = RedisWrapper()
