@@ -188,7 +188,7 @@ class ChatBackend:
                     b_user_last_timestamp = redis.get(timestamp_key)
                     user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
 
-                    if timestamp - user_last_timestamp > 75:
+                    if timestamp - user_last_timestamp > 15:
                         #  More than a minute has passed since last reconnection meaning user probably not
                         #  online anymore, so we remove user
                         num_connected = redis.get(self.clients_key)
