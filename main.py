@@ -190,7 +190,10 @@ class ChatBackend:
 
                         redis.set(self.clients_key, num_connected - 1)
                         redis.delete(user_id)
+
                         print("removing: " + user_id + " because connection was terminated")
+                        print("Current timestamp: " + str(timestamp))
+                        print("Latest timestamo: " + str(user_last_timestamp))
 
 
 class ConnectionMonitor:
@@ -417,25 +420,6 @@ def connect():
     return jsonify(languages)
 
 
-@app.route('/disconnect')
-def disconnect():
-    lang = request.args.get('lang')
-    chat_room_id = request.args.get('roomID')
-    user_id = request.args.get('userID')
-
-    print("Disconnecting with lang: ", lang)
-
-    chat_room_clients_key = chat_room_id + "_clients"
-
-    num_connected = redis.get(chat_room_clients_key)
-    num_connected = int(num_connected.decode("utf-8"))
-
-    redis.set(chat_room_clients_key, num_connected - 1)
-    redis.delete(user_id)
-
-    return jsonify("HELLO")
-
-
 @app.route('/reset')
 def reset():
     the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
@@ -486,6 +470,7 @@ def health_check(ws):
             timestamp_key = user_id + "_timestamp"
             now = datetime.datetime.now()
             timestamp = now.timestamp()
+            print("/healthcheck setting timestamp to: " + str(timestamp) + " for user: " + user_id)
             redis.set(timestamp_key, timestamp)
 
 
