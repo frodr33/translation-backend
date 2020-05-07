@@ -64,37 +64,19 @@ class TranslationAPI:
         if not isinstance(message, str):
             message = message.decode("utf-8")
 
-        # Check if ignore flag
-        if "IGNORE" in message:
-            return message
-
         # Remove prepended metadata
-        lang_index = message.index(":") + 1
-        message_index = message.index(":", lang_index) + 1
+        colon_index = message.index(":", lang_index)
+        message_content = message[colon_index:]
 
-        # language = message[lang_index:message_index-1]
-        message_content = message[message_index:]
-
-        # print("GETTING preferred language for user: " + user_id)
         language = redis.get(user_id)
-        # print(language)
-
-        # print("Translating for langauge: ", language)
-        # print(message_content)
 
         if not isinstance(language, str):
             language = language.decode("utf-8")
 
         translation = self.translator.translate(message_content, dest=language)
-
-        # print("translated")
         translated_text = translation.text
+        final_message = message[:colon_index+1] + translated_text
 
-        # Add metadata back in
-        # print("adding preprend")
-        final_message = message[:message_index] + translated_text
-
-        # print("Translated: ", message, " to: ", final_message)
         return final_message
 
 
