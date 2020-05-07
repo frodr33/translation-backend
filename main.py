@@ -486,6 +486,19 @@ def outbox(ws):
         gevent.sleep(0.1)
 
 
+@sockets.route('/healthcheck')
+def health_check(ws):
+    while not ws.closed:
+        user_id = ws.receive()
+        print("in /healthcheck for user_id: " + user_id)
+
+        # Put time stamp in
+        timestamp_key = user_id + "_timestamp"
+        now = datetime.datetime.now()
+        timestamp = now.timestamp()
+        redis.set(timestamp_key, timestamp)
+
+
 @sockets.route('/test')
 def socket_test(ws):
     print("In test")
