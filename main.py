@@ -470,6 +470,7 @@ def outbox(ws):
         gevent.sleep(0.1)
         input = ws.receive()
 
+    print("in receive with input: " + input)
     colon_index = input.find(":")
     room_id = input[0:colon_index]
     user_id = input[colon_index+1:len(input)-1]
