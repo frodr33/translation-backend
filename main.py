@@ -291,8 +291,6 @@ def join_chat_room(chat_room_id, user_id, language):
 
 
 def create_chat_room(chat_room_id, user_id, language):
-    print("Request to join chat room: " + chat_room_id)
-
     redis.lpush("chat_rooms", chat_room_id)
 
     chat_room_clients_key = chat_room_id + "_clients"
@@ -321,13 +319,13 @@ def create_chat_room(chat_room_id, user_id, language):
     chat_room = ChatBackend(chat_room_id)
     chat_room.start()
     chat_rooms[chat_room_id] = chat_room
-    print("Created chat room: " + str(chat_room) + " with room ID: " + chat_room_id)
+    print("Created chat room: " + str(chat_room) + " with room ID: " + chat_room_id + " on host: " + str(os.getpid()))
 
     # Creating Connection Monitor
     room_connection_monitor = ConnectionMonitor(chat_room_clients_key)
     room_connection_monitor.start()
     connection_monitors[chat_room_id] = room_connection_monitor
-    print("Created room connection monitor: " + str(room_connection_monitor) + " for room ID: " + chat_room_id)
+    # print("Created room connection monitor: " + str(room_connection_monitor) + " for room ID: " + chat_room_id)
 
     # Join chat room
     num_connected = redis.get(chat_room_clients_key)
@@ -387,9 +385,6 @@ def connect():
     byte_roomID = roomID.encode("utf-8")
 
     if byte_roomID in all_chat_rooms:
-        # Exists
-        print("Chat room with ID: " + roomID + " exists in redis")
-
         if roomID in chat_rooms:
             print("Chat room object with ID: " + roomID + "exists locally")
             languages = join_chat_room(roomID, id, language)
@@ -400,7 +395,7 @@ def connect():
         print("Chat room with ID: " + roomID + " doesn't exist")
         languages = create_chat_room(roomID, id, language)
 
-    print("Chatrooms that currently exist on this server: " + str(chat_rooms))
+    print("Chatrooms that currently exist on host: " + str(os.getpid()) + ": " + str(chat_rooms))
     return jsonify(languages)
 
 
