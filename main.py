@@ -189,10 +189,7 @@ class ChatBackend:
                     b_user_last_timestamp = redis.get(timestamp_key)
                     user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
 
-                    print("getting timestamps for: " + timestamp_key)
-                    print("previous time stamp: " + str(user_last_timestamp))
-                    print("now time stamp: " + str(timestamp))
-                    print("difference: " + str(timestamp - user_last_timestamp))
+                    print("Time difference for user ID: " + user_id + "is: " + str(timestamp - user_last_timestamp))
 
                     if timestamp - user_last_timestamp > 15:
                         #  More than a minute has passed since last reconnection meaning user probably not
@@ -508,8 +505,6 @@ def health_check(ws):
             now = datetime.datetime.now()
             timestamp = now.timestamp()
             redis.set(timestamp_key, timestamp)
-
-            print("Updated: " + timestamp_key + " with timestamp: " + str(timestamp))
 
 
 @sockets.route('/test')
