@@ -146,7 +146,6 @@ class ChatBackend:
                   str(self.clients))
 
             # Add to queue for each user id
-
             for client in self.clients:
                 user_id = self.client_user_id_map[client]
 
