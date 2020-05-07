@@ -113,12 +113,13 @@ class ChatBackend:
                 self.clients.append(client)
                 self.client_user_id_map[client] = user_id
             except Exception as e:
-                print("unable to remove from class lists")
+                print("Unable to remove old client, potentially due to change "
+                      + "in host that client connects to due to load balancing in high traffic")
                 print(e)
-                print(str(self.clients))
-                print(str(self.client_user_id_map))
-                print(str(self.user_ids))
-                print(str(user_id))
+                print("Old client: " + str(old_client))
+                print("Client List: " + str(self.clients))
+                self.clients.append(client)
+                self.client_user_id_map[client] = user_id
         else:
             self.user_ids.append(user_id)
             self.clients.append(client)
