@@ -103,6 +103,10 @@ class ChatBackend:
     def register(self, client, user_id):
         """Register a WebSocket connection for Redis updates."""
 
+        #  Sync nodes so they have up to date client
+        print("New client for: " + user_id + " is: " + str(client))
+        redis.set(user_id + "_client", str(client))
+
         #  If this user exists already in this, remove old socket
         if user_id in self.user_ids:
             inv_map = {v: k for k, v in self.client_user_id_map.items()}
@@ -133,6 +137,10 @@ class ChatBackend:
             print("attempting to send to: " + str(client))
             translated_data = self.translation_api.translate(user_id, data)
             client.send(translated_data)
+
+            # If able to send, then consider it successful and pop from buffer for this id
+            buffer_key = user_id + "_buffer"
+            redis.rpop(buffer_key)
         except Exception as err:
             print("Client : " + str(client) + "may be dead")
             print(err)
@@ -149,6 +157,18 @@ class ChatBackend:
                 user_id = self.client_user_id_map[client]
 
                 if redis.get(user_id):
+                    buffer_key = user_id + "_buffer"
+
+                    #  While buffer not full and this client is active client
+                    while redis.llen(buffer_key) > 0 and client.equals(redis.get(user_id + "_clients")):
+                        print("User: " + user_id + " has backed up buffer")
+                        buffered_data = redis.lindex(buffer_key, -1)
+                        gevent.spawn(self.send, client, user_id, buffered_data)
+
+                    # Put this data in buffer
+                    buffer_key = user_id + "_buffer"
+                    redis.lpush(buffer_key, data)
+
                     gevent.spawn(self.send, client, user_id, data)
                 else:
                     print("REMOVING CLIENT on host: " + str(os.getpid()) + " for user: " + user_id)
@@ -416,8 +436,6 @@ def outbox(ws):
     user_id = input[colon_index+1:len(input)]
 
     print("/receive on host: " + str(os.getpid()) + " for user: " + user_id)
-    print("/receive on host: " + str(os.getpid()) + ", room_id: " + room_id)
-    print("/receive on host: " + str(os.getpid()) + ", has chatrooms: " + str(chat_rooms))
 
     if room_id not in chat_rooms:
         # This host doesn't not have a chat room created yet
