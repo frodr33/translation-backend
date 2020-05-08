@@ -135,23 +135,26 @@ class ChatBackend:
         buffer_key = user_id + "_buffer"
         data = redis.rpop(buffer_key)
 
-        if not isinstance(data, str):
-            data = data.decode("utf-8")
+        if data:
+            if not isinstance(data, str):
+                data = data.decode("utf-8")
 
-        try:
-            print("attempting to send to: " + str(client))
-            translated_data = self.translation_api.translate(user_id, data)
-            client.send(translated_data)
-        except Exception as err:
-            print("Client : " + str(client) + "may be dead")
-            print(err)
+            try:
+                print("attempting to send to: " + str(client))
+                translated_data = self.translation_api.translate(user_id, data)
+                client.send(translated_data)
+            except Exception as err:
+                print("Client : " + str(client) + "may be dead")
+                print(err)
 
-            #  This is an old/dead client. We will let "run" take
-            #  care of deleting old clients. We just need to fill the
-            #  buffer.
-            print("Adding: " + data + " to buffer for: " + user_id)
-            buffer_key = user_id + "_buffer"
-            redis.rpush(buffer_key, data)
+                #  This is an old/dead client. We will let "run" take
+                #  care of deleting old clients. We just need to fill the
+                #  buffer.
+                print("Adding: " + data + " to buffer for: " + user_id)
+                buffer_key = user_id + "_buffer"
+                redis.rpush(buffer_key, data)
+        else:
+            print("Data is none, buffer for: " + user + " contains: " + str(redis.lrange(buffer_key, 0, -1)))
 
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
