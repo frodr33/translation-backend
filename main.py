@@ -130,9 +130,11 @@ class ChatBackend:
 
         try:
             #  Initiate text-text translations
+            print("attempting to send to: " + str(client))
             translated_data = self.translation_api.translate(user_id, data)
             client.send(translated_data)
         except Exception as err:
+            print("Client : " + str(client) + "may be dead")
             print(err)
             self.clients.remove(client)
 
@@ -171,7 +173,7 @@ class ChatBackend:
                     b_user_last_timestamp = redis.get(timestamp_key)
                     user_last_timestamp = float(b_user_last_timestamp.decode("utf-8"))
 
-                    if timestamp - user_last_timestamp > 15:
+                    if timestamp - user_last_timestamp > 60:
                         #  More than a minute has passed since last reconnection meaning user probably not
                         #  online anymore, so we remove user
                         num_connected = redis.get(self.clients_key)
