@@ -164,6 +164,7 @@ class ChatBackend:
                 if redis.get(user_id):
                     buffer_key = user_id + "_buffer"
 
+                    new_client = redis.get(user_id + "_client")
                     if new_client and not isinstance(new_client, str):
                         print("new client:" + str(new_client))
                         new_client = new_client.decode("utf-8")
@@ -177,8 +178,6 @@ class ChatBackend:
                         print("User: " + user_id + " has backed up buffer")
                         buffered_data = redis.lindex(buffer_key, -1)
                         gevent.spawn(self.send, client, user_id, buffered_data)
-
-                    new_client = redis.get(user_id + "_client")
 
                     # Put this data in buffer
                     buffer_key = user_id + "_buffer"
