@@ -174,7 +174,7 @@ class ChatBackend:
 
                     if new_client and not isinstance(new_client, str):
                         print("new client:" + str(new_client))
-                        new_client = str.decode("utf-8")
+                        new_client = new_client.decode("utf-8")
 
                     if str(client) != new_client:
                         print("Client NOT UP TO DATE. Current client: " + str(client) + " and up to date client is : "
