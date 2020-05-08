@@ -173,6 +173,7 @@ class ChatBackend:
                     new_client = redis.get(user_id + "_client")
 
                     if new_client and not isinstance(new_client, str):
+                        print("new client:" + new_client)
                         new_client = str.decode("utf-8")
 
                     if str(client) != new_client:
