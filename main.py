@@ -154,7 +154,7 @@ class ChatBackend:
                 buffer_key = user_id + "_buffer"
                 redis.rpush(buffer_key, data)
         else:
-            print("Data is none, buffer for: " + user + " contains: " + str(redis.lrange(buffer_key, 0, -1)))
+            print("Data is none, buffer for: " + user_id + " contains: " + str(redis.lrange(buffer_key, 0, -1)))
 
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
