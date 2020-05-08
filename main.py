@@ -170,8 +170,14 @@ class ChatBackend:
                         buffered_data = redis.lindex(buffer_key, -1)
                         gevent.spawn(self.send, client, user_id, buffered_data)
 
-                    if str(client) != redis.get(user_id + "_client"):
-                        print("Client NOT UP TO DATE")
+                    new_client = redis.get(user_id + "_client")
+
+                    if new_client and not isinstance(new_client, str):
+                        new_client = str.decode("utf-8")
+
+                    if str(client) != new_client:
+                        print("Client NOT UP TO DATE. Current client: " + str(client) + " and up to date client is : "
+                              + new_client)
 
                     # Put this data in buffer
                     buffer_key = user_id + "_buffer"
