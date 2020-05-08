@@ -144,7 +144,12 @@ class ChatBackend:
         except Exception as err:
             print("Client : " + str(client) + "may be dead")
             print(err)
-            self.clients.remove(client)
+
+            if client in self.clients:
+                print("removing client: " + str(client))
+                self.clients.remove(client)
+            else:
+                print("client: " + str(client) + " already removed")
 
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
