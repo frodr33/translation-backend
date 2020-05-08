@@ -154,10 +154,6 @@ class ChatBackend:
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
         for data in self.__iter_data():
-            # print("Chat room: " + str(self) + " received data: " + data.decode("utf-8") + " and has clients: " +
-            #       str(self.clients))
-
-            # Add to queue for each user id
             for client in self.clients:
                 user_id = self.client_user_id_map[client]
 
@@ -176,6 +172,7 @@ class ChatBackend:
                     #  While buffer not full and this client is active client
                     while redis.llen(buffer_key) > 0 and str(client) == new_client:
                         print("User: " + user_id + " has backed up buffer")
+                        print("Buffer currently looks like: " + str(redis.lrange(buffer_key, 0, -1)))
                         buffered_data = redis.lindex(buffer_key, -1)
                         gevent.spawn(self.send, client, user_id, buffered_data)
 
