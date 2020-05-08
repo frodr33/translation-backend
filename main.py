@@ -128,28 +128,30 @@ class ChatBackend:
             self.clients.append(client)
             self.client_user_id_map[client] = user_id
 
-    def send(self, client, user_id, data):
+    def send(self, client, user_id):
         """Send given data to the registered client.
         Automatically discards invalid connections."""
 
+        buffer_key = user_id + "_buffer"
+        data = redis.rpop(buffer_key)
+
+        if not isinstance(data, str):
+            data = data.decode("utf-8")
+
         try:
-            #  Initiate text-text translations
             print("attempting to send to: " + str(client))
             translated_data = self.translation_api.translate(user_id, data)
             client.send(translated_data)
-
-            # If able to send, then consider it successful and pop from buffer for this id
-            buffer_key = user_id + "_buffer"
-            # redis.rpop(buffer_key)
-        except Exception as err:    
+        except Exception as err:
             print("Client : " + str(client) + "may be dead")
             print(err)
 
-            if client in self.clients:
-                print("removing client: " + str(client))
-                self.clients.remove(client)
-            else:
-                print("client: " + str(client) + " already removed")
+            #  This is an old/dead client. We will let "run" take
+            #  care of deleting old clients. We just need to fill the
+            #  buffer.
+            print("Adding: " + data + " to buffer for: " + user_id)
+            buffer_key = user_id + "_buffer"
+            redis.rpush(buffer_key, data)
 
     def run(self):
         """Listens for new messages in Redis, and sends them to clients."""
@@ -165,20 +167,19 @@ class ChatBackend:
                         print("Current client: " + new_client)
 
                     if redis.get(user_id) and str(client) == new_client:
-                        # buffer_key = user_id + "_buffer"
+                        buffer_key = user_id + "_buffer"
 
-                        #  While buffer not full and this client is active client
-                        # while redis.llen(buffer_key) > 0 and str(client) == new_client:
-                        #     print("User: " + user_id + " has backed up buffer")
-                        #     print("Buffer currently looks like: " + str(redis.lrange(buffer_key, 0, -1)))
-                        #     buffered_data = redis.lindex(buffer_key, -1)
-                        #     gevent.spawn(self.send, client, user_id, buffered_data)
+                        # While buffer not full and this client is active client
+                        while redis.llen(buffer_key) > 0 and str(client) == new_client:
+                            print("User: " + user_id + " has backed up buffer")
+                            print("Buffer currently looks like: " + str(redis.lrange(buffer_key, 0, -1)))
+                            gevent.spawn(self.send, client, user_id)
 
                         # Put this data in buffer
-                        # buffer_key = user_id + "_buffer"
-                        # redis.lpush(buffer_key, data)
+                        buffer_key = user_id + "_buffer"
+                        redis.lpush(buffer_key, data)
 
-                        gevent.spawn(self.send, client, user_id, data)
+                        gevent.spawn(self.send, client, user_id)
                     else:
                         print("REMOVING CLIENT on host: " + str(os.getpid()) + " for user: " + user_id)
                         self.clients.remove(client)
