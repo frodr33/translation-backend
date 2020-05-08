@@ -160,7 +160,7 @@ class ChatBackend:
                     buffer_key = user_id + "_buffer"
 
                     #  While buffer not full and this client is active client
-                    while redis.llen(buffer_key) > 0 and client.equals(redis.get(user_id + "_clients")):
+                    while redis.llen(buffer_key) > 0 and str(client).equals(redis.get(user_id + "_clients")):
                         print("User: " + user_id + " has backed up buffer")
                         buffered_data = redis.lindex(buffer_key, -1)
                         gevent.spawn(self.send, client, user_id, buffered_data)
